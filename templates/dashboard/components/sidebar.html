@@ -399,7 +399,16 @@
 </a>
 
 
+<a href="{% url 'conversation_list' %}"
+   class="{% if request.resolver_match.url_name == 'conversation_list' or request.resolver_match.url_name == 'conversation_detail' %}active{% endif %}">
 
+    <i class="bi bi-chat-dots"></i>
+
+    <span>
+        Messages
+    </span>
+
+</a>
 
 
 

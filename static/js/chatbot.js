@@ -59,6 +59,84 @@ document.addEventListener("DOMContentLoaded", function () {
 
     }
 
+        /* ======================================================
+       QUICK QUESTIONS
+    ====================================================== */
+
+    const quickActions =
+        document.querySelectorAll(
+            ".chatbot-quick-action"
+        );
+
+
+    quickActions.forEach(
+        function (button) {
+
+            button.addEventListener(
+                "click",
+                function () {
+
+                    const question =
+                        button.dataset.question;
+
+
+                    if (!question) {
+
+                        return;
+
+                    }
+
+
+                    input.value =
+                        question;
+
+
+                    form.dispatchEvent(
+                        new Event(
+                            "submit",
+                            {
+                                bubbles: true,
+                                cancelable: true
+                            }
+                        )
+                    );
+
+                }
+            );
+
+        }
+    );
+
+        /* ======================================================
+       ENTER TO SEND
+    ====================================================== */
+
+    input.addEventListener(
+        "keydown",
+        function (event) {
+
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey
+            ) {
+
+                event.preventDefault();
+
+                form.dispatchEvent(
+                    new Event(
+                        "submit",
+                        {
+                            bubbles: true,
+                            cancelable: true
+                        }
+                    )
+                );
+
+            }
+
+        }
+    );
+
 
     /* ======================================================
        OPEN CHAT
@@ -71,6 +149,16 @@ document.addEventListener("DOMContentLoaded", function () {
             windowElement.classList.toggle(
                 "active"
             );
+
+            toggle.setAttribute(
+    "aria-expanded",
+    windowElement.classList.contains("active")
+);
+    
+          windowElement.setAttribute(
+    "aria-hidden",
+    !windowElement.classList.contains("active")
+);
 
 
             if (
@@ -99,6 +187,16 @@ document.addEventListener("DOMContentLoaded", function () {
                 "active"
             );
 
+            toggle.setAttribute(
+    "aria-expanded",
+    "false"
+);
+
+windowElement.setAttribute(
+    "aria-hidden",
+    "true"
+);
+
         }
     );
 
@@ -118,6 +216,16 @@ document.addEventListener("DOMContentLoaded", function () {
                 windowElement.classList.remove(
                     "active"
                 );
+
+                toggle.setAttribute(
+    "aria-expanded",
+    "false"
+);
+
+windowElement.setAttribute(
+    "aria-hidden",
+    "true"
+);
 
             }
 
@@ -165,6 +273,223 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /* ======================================================
+   CHATBOT RESPONSE FORMATTER
+====================================================== */
+
+function renderChatbotText(
+    element,
+    text
+) {
+
+    if (!text) {
+
+        return;
+
+    }
+
+    const lines =
+        String(text).split("\n");
+
+    lines.forEach(
+        function (line, index) {
+
+            const trimmed =
+                line.trim();
+
+            if (!trimmed) {
+
+                if (
+                    index <
+                    lines.length - 1
+                ) {
+
+                    element.appendChild(
+                        document.createElement("br")
+                    );
+
+                }
+
+                return;
+
+            }
+
+            /* ==========================================
+               BULLET POINT
+            ========================================== */
+
+            if (
+                trimmed.startsWith("- ") ||
+                trimmed.startsWith("* ")
+            ) {
+
+                const bullet =
+                    document.createElement("div");
+
+                bullet.className =
+                    "chatbot-response-bullet";
+
+                const icon =
+                    document.createElement("span");
+
+                icon.className =
+                    "chatbot-bullet-icon";
+
+                icon.textContent =
+                    "•";
+
+                const content =
+                    document.createElement("span");
+
+                renderInlineFormatting(
+                    content,
+                    trimmed.substring(2)
+                );
+
+                bullet.appendChild(icon);
+
+                bullet.appendChild(content);
+
+                element.appendChild(bullet);
+
+                return;
+
+            }
+
+            /* ==========================================
+               NUMBERED LIST
+            ========================================== */
+
+            const numbered =
+                trimmed.match(
+                    /^(\d+)[.)]\s+(.*)$/
+                );
+
+            if (numbered) {
+
+                const item =
+                    document.createElement("div");
+
+                item.className =
+                    "chatbot-response-number";
+
+                const number =
+                    document.createElement("span");
+
+                number.className =
+                    "chatbot-number";
+
+                number.textContent =
+                    numbered[1];
+
+                const content =
+                    document.createElement("span");
+
+                renderInlineFormatting(
+                    content,
+                    numbered[2]
+                );
+
+                item.appendChild(number);
+
+                item.appendChild(content);
+
+                element.appendChild(item);
+
+                return;
+
+            }
+
+            /* ==========================================
+               NORMAL PARAGRAPH
+            ========================================== */
+
+            const paragraph =
+                document.createElement("div");
+
+            paragraph.className =
+                "chatbot-response-paragraph";
+
+            renderInlineFormatting(
+                paragraph,
+                trimmed
+            );
+
+            element.appendChild(
+                paragraph
+            );
+
+        }
+    );
+
+}
+
+
+/* ======================================================
+   INLINE FORMATTING
+====================================================== */
+
+function renderInlineFormatting(
+    element,
+    text
+) {
+
+    const parts =
+        String(text).split(
+            /(\*\*[^*]+\*\*|`[^`]+`)/
+        );
+
+    parts.forEach(
+        function (part) {
+
+            if (
+                part.startsWith("**") &&
+                part.endsWith("**")
+            ) {
+
+                const strong =
+                    document.createElement("strong");
+
+                strong.textContent =
+                    part.slice(2, -2);
+
+                element.appendChild(
+                    strong
+                );
+
+                return;
+
+            }
+
+            if (
+                part.startsWith("`") &&
+                part.endsWith("`")
+            ) {
+
+                const code =
+                    document.createElement("code");
+
+                code.textContent =
+                    part.slice(1, -1);
+
+                element.appendChild(
+                    code
+                );
+
+                return;
+
+            }
+
+            element.appendChild(
+                document.createTextNode(part)
+            );
+
+        }
+    );
+
+}
+
+
+    /* ======================================================
        ADD MESSAGE
     ====================================================== */
 
@@ -195,13 +520,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
         const textElement =
-            document.createElement(
-                "div"
-            );
+    document.createElement(
+        "div"
+    );
 
+textElement.className =
+    "chatbot-message-text";
 
-        textElement.textContent =
-            text;
+renderChatbotText(
+    textElement,
+    text
+);
 
 
         content.appendChild(
@@ -645,26 +974,38 @@ document.addEventListener("DOMContentLoaded", function () {
                 hideTyping();
 
 
-                if (
-                    data.reply
-                ) {
+                /* ==================================================
+   HANDLE RESPONSE
+================================================== */
 
-                    addMessage(
-                        data.reply,
-                        "bot",
-                        data.links || []
-                    );
+if (response.status === 429) {
 
-                }
+    addMessage(
+        data.reply ||
+        "The AI assistant is temporarily unavailable because the AI service has reached its usage limit. Please try again later. ⏳",
+        "bot"
+    );
 
-                else {
+}
+else if (data.reply) {
 
-                    addMessage(
-                        "Sorry, something went wrong.",
-                        "bot"
-                    );
+    addMessage(
+        data.reply,
+        "bot",
+        data.links || []
+    );
 
-                }
+}
+else {
+
+    addMessage(
+        "Sorry, I couldn't process that request. Please try again.",
+        "bot"
+    );
+
+}
+
+                
 
             }
 

@@ -1,18 +1,18 @@
 {% load static %}
 
-<div
-    id="eventifyChatbot"
-    class="eventify-chatbot">
-
+<div id="eventifyChatbot" class="eventify-chatbot">
 
     <!-- ==================================================
          CHAT WINDOW
-    =================================================== -->
+    ================================================== -->
 
     <div
         id="chatbotWindow"
-        class="chatbot-window">
-
+        class="chatbot-window"
+        role="dialog"
+        aria-label="Eventify Assistant"
+        aria-hidden="true"
+    >
 
         <!-- HEADER -->
 
@@ -20,121 +20,206 @@
 
             <div class="chatbot-header-left">
 
-                <div class="chatbot-avatar">
-
-                    🤖
-
+                <div class="chatbot-avatar" aria-hidden="true">
+                    <i class="bi bi-stars"></i>
                 </div>
 
-
-                <div>
+                <div class="chatbot-header-info">
 
                     <div class="chatbot-title">
-
                         Eventify Assistant
-
                     </div>
 
                     <div class="chatbot-status">
-
-                        <span
-                            class="chatbot-status-dot">
-                        </span>
-
-                        Online
-
+                        <span class="chatbot-status-dot"></span>
+                        <span>Online</span>
                     </div>
 
                 </div>
 
             </div>
-
 
             <button
                 id="chatbotClose"
                 type="button"
                 class="chatbot-close"
-                aria-label="Close chatbot">
-
+                aria-label="Close chatbot"
+            >
                 <i class="bi bi-x-lg"></i>
-
             </button>
 
         </div>
 
 
-        <!-- MESSAGES -->
+        <!-- ==================================================
+             MESSAGES
+        ================================================== -->
 
         <div
             id="chatbotMessages"
-            class="chatbot-messages">
+            class="chatbot-messages"
+            aria-live="polite"
+        >
 
+            <!-- WELCOME MESSAGE -->
 
             <div class="chatbot-message bot">
 
                 <div class="chatbot-bubble">
 
-                    Hi! 👋 I'm the Eventify Assistant.
+                    <strong>Welcome to Eventify! 👋</strong>
 
                     <br><br>
 
-                    I can help you find events,
-                    understand registrations,
-                    and navigate Eventify.
+                    I'm your AI event assistant. I can help you with:
 
                     <br><br>
 
-                    What would you like to know?
+                    <span>🎟️ Events & registrations</span>
+                    <br>
+                    <span>📅 Event dates and schedules</span>
+                    <br>
+                    <span>🧭 Navigating Eventify</span>
+                    <br>
+                    <span>❓ FAQs and platform help</span>
+                    <br>
+                    <span>💬 General questions</span>
+
+                    <br><br>
+
+                    Ask me anything or choose an option below.
+
+                </div>
+
+
+                <!-- QUICK QUESTIONS -->
+
+                <div class="chatbot-quick-actions">
+
+                    <button
+                        type="button"
+                        class="chatbot-quick-action"
+                        data-question="How can I find upcoming events?"
+                    >
+                        <i class="bi bi-calendar-event"></i>
+                        <span>Find upcoming events</span>
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="chatbot-quick-action"
+                        data-question="How do I register for an event?"
+                    >
+                        <i class="bi bi-ticket-perforated"></i>
+                        <span>How do I register?</span>
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="chatbot-quick-action"
+                        data-question="How can I view my registrations?"
+                    >
+                        <i class="bi bi-person-check"></i>
+                        <span>View my registrations</span>
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="chatbot-quick-action"
+                        data-question="What can Eventify Assistant help me with?"
+                    >
+                        <i class="bi bi-question-circle"></i>
+                        <span>What can you help with?</span>
+                    </button>
 
                 </div>
 
             </div>
 
 
-            <!-- TYPING -->
+            <!-- ==================================================
+                 TYPING INDICATOR
+            ================================================== -->
 
             <div
                 id="chatbotTyping"
-                class="chatbot-typing">
+                class="chatbot-typing-wrapper"
+                aria-hidden="true"
+            >
 
-                <span></span>
-                <span></span>
-                <span></span>
+                <div class="chatbot-typing">
+
+                    <div class="chatbot-typing-avatar">
+                        <i class="bi bi-stars"></i>
+                    </div>
+
+                    <div class="chatbot-typing-bubble">
+
+                        <span></span>
+                        <span></span>
+                        <span></span>
+
+                    </div>
+
+                </div>
 
             </div>
 
         </div>
 
 
-        <!-- INPUT -->
+        <!-- ==================================================
+             INPUT
+        ================================================== -->
 
         <div class="chatbot-input-area">
 
             <form
                 id="chatbotForm"
-                class="chatbot-form">
+                class="chatbot-form"
+            >
+
+                <div class="chatbot-input-wrapper">
+
+                    <textarea
+                        id="chatbotInput"
+                        class="chatbot-input"
+                        rows="1"
+                        maxlength="2000"
+                        placeholder="Ask Eventify anything..."
+                        autocomplete="off"
+                        aria-label="Ask Eventify Assistant"
+                    ></textarea>
 
 
-                <input
-                    id="chatbotInput"
-                    class="chatbot-input"
-                    type="text"
-                    placeholder="Ask Eventify..."
-                    autocomplete="off"
-                >
+                    <button
+                        type="submit"
+                        class="chatbot-send"
+                        aria-label="Send message"
+                    >
+                        <i class="bi bi-arrow-up"></i>
+                    </button>
 
-
-                <button
-                    type="submit"
-                    class="chatbot-send"
-                    aria-label="Send message">
-
-                    <i class="bi bi-send-fill"></i>
-
-                </button>
-
+                </div>
 
             </form>
+
+
+            <div class="chatbot-input-footer">
+
+                <span>
+                    <i class="bi bi-shield-check"></i>
+                    Eventify AI
+                </span>
+
+                <span>
+                    Press Enter to send
+                </span>
+
+            </div>
 
         </div>
 
@@ -143,15 +228,24 @@
 
     <!-- ==================================================
          FLOATING BUTTON
-    =================================================== -->
+    ================================================== -->
 
     <button
         id="chatbotToggle"
         class="chatbot-toggle"
         type="button"
-        aria-label="Open Eventify Assistant">
+        aria-label="Open Eventify Assistant"
+        aria-expanded="false"
+    >
 
-        <i class="bi bi-chat-dots-fill"></i>
+        <span class="chatbot-toggle-icon">
+            <i class="bi bi-stars"></i>
+        </span>
+
+        <span
+            class="chatbot-toggle-pulse"
+            aria-hidden="true">
+        </span>
 
     </button>
 

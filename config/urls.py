@@ -39,6 +39,21 @@ urlpatterns = [
     include("chatbot.urls"),
 ),
 
+    path(
+    "feedback/",
+    include("feedback.urls"),
+),
+
+   path(
+    "faq/",
+    include("faq.urls"),
+),
+
+   path(
+    "messaging/",
+    include("messaging.urls"),
+),
+
 ]
 
 if settings.DEBUG:

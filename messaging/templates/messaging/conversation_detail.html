@@ -1,0 +1,237 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}
+{{ conversation.event.title }} | Messages
+{% endblock %}
+
+{% block dashboard_content %}
+
+<div class="page-header mb-4">
+
+    <div class="d-flex align-items-center gap-3">
+
+        <a
+            href="{% url 'conversation_list' %}"
+            class="btn btn-outline-secondary rounded-circle"
+            title="Back to Messages"
+        >
+
+            <i class="bi bi-arrow-left"></i>
+
+        </a>
+
+        <div>
+
+            <span class="text-muted">
+                {{ conversation.event.title }}
+            </span>
+
+            {% if request.user == conversation.attendee %}
+
+                <h2 class="fw-bold mb-0">
+
+                    {{ conversation.organizer.username }}
+
+                </h2>
+
+                <small class="text-muted">
+                    Event Organizer
+                </small>
+
+            {% else %}
+
+                <h2 class="fw-bold mb-0">
+
+                    {{ conversation.attendee.username }}
+
+                </h2>
+
+                <small class="text-muted">
+                    Event Attendee
+                </small>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ==========================================
+     MESSAGE CONTAINER
+========================================== -->
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+
+    <div
+        class="card-body p-3 p-md-4"
+        style="height:500px; overflow-y:auto;"
+        id="messageContainer"
+    >
+
+        {% if conversation_messages %}
+
+            {% for message in conversation_messages %}
+
+                {% if message.sender == request.user %}
+
+                    <!-- CURRENT USER MESSAGE -->
+
+                    <div class="d-flex justify-content-end mb-3">
+
+                        <div
+                            class="bg-primary text-white rounded-4
+                                   px-3 py-2"
+                            style="max-width:75%;"
+                        >
+
+                            <div style="white-space:pre-wrap;">
+                                {{ message.content }}
+                            </div>
+
+                            <div
+                                class="text-end mt-1"
+                                style="font-size:0.7rem; opacity:0.8;"
+                            >
+
+                                {{ message.created_at|date:"M d, H:i" }}
+
+                                <i class="bi bi-check2-all ms-1"></i>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                {% else %}
+
+                    <!-- OTHER USER MESSAGE -->
+
+                    <div class="d-flex justify-content-start mb-3">
+
+                        <div
+                            class="bg-light rounded-4
+                                   px-3 py-2"
+                            style="max-width:75%;"
+                        >
+
+                            <div class="fw-semibold small text-primary mb-1">
+
+                                {{ message.sender.username }}
+
+                            </div>
+
+                            <div style="white-space:pre-wrap;">
+
+                                {{ message.content }}
+
+                            </div>
+
+                            <div
+                                class="text-muted mt-1"
+                                style="font-size:0.7rem;"
+                            >
+
+                                {{ message.created_at|date:"M d, H:i" }}
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                {% endif %}
+
+            {% endfor %}
+
+        {% else %}
+
+            <div class="h-100 d-flex flex-column
+                        align-items-center justify-content-center">
+
+                <i class="bi bi-chat-dots display-4 text-muted mb-3"></i>
+
+                <h5 class="fw-bold">
+                    Start the Conversation
+                </h5>
+
+                <p class="text-muted mb-0">
+
+                    Send the first message below.
+
+                </p>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- ==========================================
+         MESSAGE INPUT
+    ========================================== -->
+
+    <div class="card-footer bg-white border-0 p-3">
+
+        <form
+            method="POST"
+            action="{% url 'send_message' conversation.id %}"
+        >
+
+            {% csrf_token %}
+
+            <div class="input-group">
+
+                <textarea
+                    name="content"
+                    class="form-control"
+                    rows="2"
+                    maxlength="5000"
+                    placeholder="Write a message..."
+                    required
+                ></textarea>
+
+                <button
+                    type="submit"
+                    class="btn btn-primary px-4"
+                >
+
+                    <i class="bi bi-send-fill me-1"></i>
+
+                    Send
+
+                </button>
+
+            </div>
+
+            <div class="text-muted small mt-1">
+
+                Maximum 5000 characters.
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const container =
+        document.getElementById("messageContainer");
+
+    if (container) {
+        container.scrollTop = container.scrollHeight;
+    }
+
+});
+</script>
+
+{% endblock %}

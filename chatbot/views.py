@@ -26,6 +26,10 @@ def chat_api(request):
         "",
     ).strip()
 
+    # ==========================================================
+    # EMPTY MESSAGE
+    # ==========================================================
+
     if not message:
 
         return JsonResponse(
@@ -39,9 +43,9 @@ def chat_api(request):
 
     try:
 
-        # ==================================================
+        # ======================================================
         # 1. CANCELLATION REQUEST
-        # ==================================================
+        # ======================================================
 
         if detect_cancellation_request(message):
 
@@ -52,9 +56,9 @@ def chat_api(request):
                 )
             )
 
-            # ----------------------------------------------
+            # --------------------------------------------------
             # Registration not found
-            # ----------------------------------------------
+            # --------------------------------------------------
 
             if not registration:
 
@@ -103,9 +107,9 @@ def chat_api(request):
                     }
                 )
 
-            # ----------------------------------------------
+            # --------------------------------------------------
             # Already cancelled
-            # ----------------------------------------------
+            # --------------------------------------------------
 
             if (
                 registration.status
@@ -131,9 +135,9 @@ def chat_api(request):
                     }
                 )
 
-            # ----------------------------------------------
+            # --------------------------------------------------
             # Already attended
-            # ----------------------------------------------
+            # --------------------------------------------------
 
             if (
                 registration.status
@@ -161,9 +165,9 @@ def chat_api(request):
                     }
                 )
 
-            # ----------------------------------------------
-            # CONFIRMATION REQUIRED
-            # ----------------------------------------------
+            # --------------------------------------------------
+            # Confirmation required
+            # --------------------------------------------------
 
             return JsonResponse(
                 {
@@ -179,7 +183,9 @@ def chat_api(request):
                             "url": "#",
                             "action": "confirm_cancel",
                             "registration_id": registration.id,
-                            "event_title": registration.event.title,
+                            "event_title": (
+                                registration.event.title
+                            ),
                         },
                         {
                             "label": "No, Keep Registration",
@@ -190,9 +196,9 @@ def chat_api(request):
                 }
             )
 
-                # ==================================================
+        # ======================================================
         # 2. TICKET / QR REQUEST
-        # ==================================================
+        # ======================================================
 
         if detect_ticket_request(message):
 
@@ -203,10 +209,9 @@ def chat_api(request):
                 )
             )
 
-
-            # ----------------------------------------------
-            # Event/ticket not found
-            # ----------------------------------------------
+            # --------------------------------------------------
+            # Ticket not found
+            # --------------------------------------------------
 
             if not registration:
 
@@ -234,7 +239,6 @@ def chat_api(request):
                         }
                     )
 
-
                 return JsonResponse(
                     {
                         "success": True,
@@ -254,45 +258,47 @@ def chat_api(request):
                     }
                 )
 
-
-            # ----------------------------------------------
+            # --------------------------------------------------
             # Ticket found
-            # ----------------------------------------------
+            # --------------------------------------------------
 
             return JsonResponse(
-    {
-        "success": True,
-        "reply": (
-            f"Your ticket for "
-            f"{registration.event.title} "
-            f"is ready. 🎟️ "
-            f"You can view your QR ticket below."
-        ),
-        "links": [
-            {
-                "label": (
-                    f"View {registration.event.title} Ticket"
-                ),
-                "url": reverse(
-                    "ticket_detail",
-                    kwargs={
-                        "registration_id":
-                            registration.id,
-                    },
-                ),
-            },
-            {
-                "label": "My Registrations",
-                "url": reverse(
-                    "my_registrations"
-                ),
-            },
-        ],
-    }
-)
-        # ==================================================
-        # 2. REGISTRATION REQUEST
-        # ==================================================
+                {
+                    "success": True,
+                    "reply": (
+                        f"Your ticket for "
+                        f"{registration.event.title} "
+                        f"is ready. 🎟️ "
+                        f"You can view your QR ticket below."
+                    ),
+                    "links": [
+                        {
+                            "label": (
+                                f"View "
+                                f"{registration.event.title} "
+                                f"Ticket"
+                            ),
+                            "url": reverse(
+                                "ticket_detail",
+                                kwargs={
+                                    "registration_id":
+                                        registration.id,
+                                },
+                            ),
+                        },
+                        {
+                            "label": "My Registrations",
+                            "url": reverse(
+                                "my_registrations"
+                            ),
+                        },
+                    ],
+                }
+            )
+
+        # ======================================================
+        # 3. REGISTRATION REQUEST
+        # ======================================================
 
         if detect_registration_request(message):
 
@@ -311,9 +317,9 @@ def chat_api(request):
                     .first()
                 )
 
-                # ------------------------------------------
+                # ----------------------------------------------
                 # Already registered
-                # ------------------------------------------
+                # ----------------------------------------------
 
                 if registration:
 
@@ -332,7 +338,9 @@ def chat_api(request):
                                 ),
                                 "links": [
                                     {
-                                        "label": "My Registrations",
+                                        "label": (
+                                            "My Registrations"
+                                        ),
                                         "url": reverse(
                                             "my_registrations"
                                         ),
@@ -341,9 +349,9 @@ def chat_api(request):
                             }
                         )
 
-                # ------------------------------------------
+                # ----------------------------------------------
                 # Own event
-                # ------------------------------------------
+                # ----------------------------------------------
 
                 if event.organizer == request.user:
 
@@ -370,9 +378,9 @@ def chat_api(request):
                         }
                     )
 
-                # ------------------------------------------
+                # ----------------------------------------------
                 # Registration closed
-                # ------------------------------------------
+                # ----------------------------------------------
 
                 if not event.is_registration_open:
 
@@ -400,9 +408,9 @@ def chat_api(request):
                         }
                     )
 
-                # ------------------------------------------
+                # ----------------------------------------------
                 # Registration available
-                # ------------------------------------------
+                # ----------------------------------------------
 
                 return JsonResponse(
                     {
@@ -429,9 +437,9 @@ def chat_api(request):
                     }
                 )
 
-        # ==================================================
-        # 3. NORMAL AI CHAT
-        # ==================================================
+        # ======================================================
+        # 4. NORMAL AI CHAT
+        # ======================================================
 
         reply = ask_gemini(
             message,
@@ -451,16 +459,91 @@ def chat_api(request):
             }
         )
 
+    # ==========================================================
+    # GEMINI / AI SERVICE ERRORS
+    # ==========================================================
+
     except Exception as error:
+
+        error_text = str(error)
 
         print(
             "Chatbot error:",
             error,
         )
 
+        # ------------------------------------------------------
+        # Gemini quota / rate limit
+        # ------------------------------------------------------
+
+        if (
+            "429" in error_text
+            or "RESOURCE_EXHAUSTED" in error_text
+            or "quota" in error_text.lower()
+            or "rate limit" in error_text.lower()
+        ):
+
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error_type": "quota_exhausted",
+                    "reply": (
+                        "The Eventify AI assistant has "
+                        "temporarily reached its AI usage "
+                        "limit. Please try again later. "
+                        "Your Eventify account and other "
+                        "features are still working normally."
+                    ),
+                    "links": [
+                        {
+                            "label": "Browse Events",
+                            "url": reverse(
+                                "event_list"
+                            ),
+                        },
+                        {
+                            "label": "My Registrations",
+                            "url": reverse(
+                                "my_registrations"
+                            ),
+                        },
+                    ],
+                },
+                status=429,
+            )
+
+        # ------------------------------------------------------
+        # Authentication / permission issue
+        # ------------------------------------------------------
+
+        if (
+            "401" in error_text
+            or "403" in error_text
+            or "permission" in error_text.lower()
+        ):
+
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error_type": "ai_permission",
+                    "reply": (
+                        "The AI assistant is temporarily "
+                        "unable to access the AI service. "
+                        "Please try again later."
+                    ),
+                    "links": [],
+                },
+                status=503,
+            )
+
+        # ------------------------------------------------------
+        # Generic server / AI error
+        # ------------------------------------------------------
+
         return JsonResponse(
             {
                 "success": False,
+                "error_type": "server_error",
                 "reply": (
                     "I'm having trouble processing "
                     "your request right now. "

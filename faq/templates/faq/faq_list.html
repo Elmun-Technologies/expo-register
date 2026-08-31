@@ -1,0 +1,327 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}
+Manage FAQs | {{ event.title }}
+{% endblock %}
+
+{% block dashboard_content %}
+
+<!-- ==========================================
+PAGE HEADER
+========================================== -->
+
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap mb-4">
+
+    <div>
+
+        <span class="text-muted">
+            Event Management
+        </span>
+
+        <h2 class="fw-bold mb-2">
+
+            <i class="bi bi-question-circle-fill text-primary me-2"></i>
+
+            Manage FAQs
+
+        </h2>
+
+        <p class="text-muted mb-0">
+
+            Manage frequently asked questions for
+            <strong>{{ event.title }}</strong>.
+
+        </p>
+
+    </div>
+
+
+    <div class="d-flex gap-2 mt-3 mt-md-0">
+
+        <a
+            href="{% url 'event_detail' event.slug %}"
+            class="btn btn-outline-primary"
+        >
+
+            <i class="bi bi-eye me-2"></i>
+
+            View Event
+
+        </a>
+
+
+        <a
+            href="{% url 'faq_create' event.id %}"
+            class="btn btn-primary"
+        >
+
+            <i class="bi bi-plus-circle me-2"></i>
+
+            Add FAQ
+
+        </a>
+
+    </div>
+
+</div>
+
+
+
+<!-- ==========================================
+EVENT INFO
+========================================== -->
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+
+    <div class="card-body">
+
+        <div class="row align-items-center">
+
+            <div class="col-md-8">
+
+                <h5 class="fw-bold mb-1">
+
+                    {{ event.title }}
+
+                </h5>
+
+                <p class="text-muted mb-0">
+
+                    <i class="bi bi-geo-alt me-1"></i>
+
+                    {{ event.venue }}
+
+                    <span class="mx-2">•</span>
+
+                    <i class="bi bi-calendar-event me-1"></i>
+
+                    {{ event.event_date }}
+
+                </p>
+
+            </div>
+
+
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+
+                <span class="badge bg-primary fs-6">
+
+                    {{ faqs|length }} FAQ{{ faqs|length|pluralize }}
+
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- ==========================================
+FAQ LIST
+========================================== -->
+
+{% if faqs %}
+
+<div class="row g-4">
+
+    {% for faq in faqs %}
+
+    <div class="col-12">
+
+        <div class="card border-0 shadow-sm rounded-4">
+
+            <div class="card-body p-4">
+
+                <div class="d-flex justify-content-between align-items-start gap-3">
+
+                    <div class="d-flex gap-3">
+
+                        <div
+                            class="rounded-circle bg-primary-subtle
+                                   text-primary d-flex align-items-center
+                                   justify-content-center flex-shrink-0"
+                            style="width:45px;height:45px;"
+                        >
+
+                            <strong>
+                                {{ forloop.counter }}
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <h5 class="fw-bold mb-2">
+
+                                {{ faq.question }}
+
+                            </h5>
+
+                            <p class="text-muted mb-2">
+
+                                {{ faq.answer|linebreaksbr }}
+
+                            </p>
+
+
+                            <div class="d-flex gap-2 flex-wrap">
+
+                                {% if faq.is_active %}
+
+                                    <span class="badge bg-success">
+
+                                        <i class="bi bi-check-circle me-1"></i>
+
+                                        Active
+
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-secondary">
+
+                                        <i class="bi bi-eye-slash me-1"></i>
+
+                                        Hidden
+
+                                    </span>
+
+                                {% endif %}
+
+
+                                <span class="badge bg-light text-dark">
+
+                                    Order: {{ faq.display_order }}
+
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ACTIONS -->
+
+                    <div class="btn-group btn-group-sm flex-shrink-0">
+
+                        <a
+                            href="{% url 'faq_update' faq.id %}"
+                            class="btn btn-outline-warning"
+                            title="Edit FAQ"
+                        >
+
+                            <i class="bi bi-pencil"></i>
+
+                        </a>
+
+
+                        <form
+                            method="POST"
+                            action="{% url 'faq_delete' faq.id %}"
+                            style="display:inline;"
+                        >
+
+                            {% csrf_token %}
+
+                            <button
+                                type="submit"
+                                class="btn btn-outline-danger"
+                                title="Delete FAQ"
+                                onclick="return confirm('Delete this FAQ?');"
+                            >
+
+                                <i class="bi bi-trash"></i>
+
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {% endfor %}
+
+</div>
+
+{% else %}
+
+<!-- ==========================================
+EMPTY STATE
+========================================== -->
+
+<div class="card border-0 shadow-sm rounded-4">
+
+    <div class="card-body text-center py-5">
+
+        <div class="display-1 text-muted mb-3">
+
+            <i class="bi bi-question-circle"></i>
+
+        </div>
+
+        <h4 class="fw-bold">
+
+            No FAQs Yet
+
+        </h4>
+
+        <p class="text-muted">
+
+            Add frequently asked questions to help attendees
+            understand your event.
+
+        </p>
+
+        <a
+            href="{% url 'faq_create' event.id %}"
+            class="btn btn-primary"
+        >
+
+            <i class="bi bi-plus-circle me-2"></i>
+
+            Add Your First FAQ
+
+        </a>
+
+    </div>
+
+</div>
+
+{% endif %}
+
+
+
+<!-- ==========================================
+BACK
+========================================== -->
+
+<div class="mt-4">
+
+    <a
+        href="{% url 'my_events' %}"
+        class="btn btn-outline-secondary"
+    >
+
+        <i class="bi bi-arrow-left me-2"></i>
+
+        Back to My Events
+
+    </a>
+
+</div>
+
+{% endblock %}

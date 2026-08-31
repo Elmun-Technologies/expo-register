@@ -155,17 +155,24 @@ def my_registrations(request):
     )
 
     # =====================================
-    # SEARCH
-    # =====================================
+# SEARCH
+# =====================================
 
-    search = request.GET.get("search")
+    search = request.GET.get(
+    "search",
+    "",
+).strip()
+
+# Prevent the string "None" from
+# being treated as an actual search term.
+    if search.lower() == "none":
+      search = ""
 
     if search:
-        registrations = registrations.filter(
-            Q(event__title__icontains=search) |
-            Q(event__venue__icontains=search)
-        )
-
+     registrations = registrations.filter(
+        Q(event__title__icontains=search)
+        | Q(event__venue__icontains=search)
+    )
     # =====================================
     # STATUS FILTER
     # Default = Registered

@@ -405,19 +405,35 @@ def event_detail(request, slug):
     )
 
     related_events = Event.objects.filter(
-    category=event.category
-).exclude(
-    id=event.id
-).order_by(
-    "-created_at"
-)[:3]
+        category=event.category,
+    ).exclude(
+        id=event.id,
+    ).order_by(
+        "-created_at",
+    )[:3]
+
+    can_message_organizer = False
+
+    if request.user != event.organizer:
+        can_message_organizer = Registration.objects.filter(
+            attendee=request.user,
+            event=event,
+            status__in=[
+                Registration.Status.REGISTERED,
+                Registration.Status.ATTENDED,
+            ],
+        ).exists()
 
     context = {
-    "event": event,
-    "registrations_count": registrations_count,
-    "dashboard_type": get_dashboard_type(request.user),
-    "related_events": related_events,
-}
+        "event": event,
+        "registrations_count": registrations_count,
+        "dashboard_type": get_dashboard_type(request.user),
+        "related_events": related_events,
+        "faqs": event.faqs.filter(
+            is_active=True,
+        ),
+        "can_message_organizer": can_message_organizer,
+    }
 
     return render(
         request,

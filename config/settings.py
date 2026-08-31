@@ -31,6 +31,9 @@ INSTALLED_APPS = [
     "dashboard",
     "notifications",
     "chatbot",
+    "feedback",
+    "faq",
+    "messaging",
 
     # Django Apps
     "django.contrib.admin",

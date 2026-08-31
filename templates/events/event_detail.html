@@ -434,18 +434,33 @@ ORGANIZER & ACTION PANEL
 
                 {% if request.user.role == "ATTENDEE" %}
 
-                    <div class="d-grid">
+    <div class="d-grid gap-2">
 
-                        <a href="{% url 'register_event' event.slug %}"
-                           class="btn btn-success btn-lg">
+        <a href="{% url 'register_event' event.slug %}"
+           class="btn btn-success btn-lg">
 
-                            <i class="bi bi-ticket-perforated me-2"></i>
+            <i class="bi bi-ticket-perforated me-2"></i>
 
-                            Register Now
+            Register Now
 
-                        </a>
+        </a>
 
-                    </div>
+
+        {% if can_message_organizer %}
+
+        <a href="{% url 'start_conversation' event.id %}"
+           class="btn btn-outline-primary btn-lg">
+
+            <i class="bi bi-chat-dots me-2"></i>
+
+            Message Organizer
+
+        </a>
+
+        {% endif %}
+
+    </div>
+
 
                 {% elif request.user.role == "ORGANIZER" %}
 
@@ -555,6 +570,96 @@ ORGANIZER & ACTION PANEL
     </div>
 
 </div>
+
+<!-- ==========================================
+     FREQUENTLY ASKED QUESTIONS
+========================================== -->
+
+{% if faqs %}
+
+<section class="mt-5">
+
+    <div class="text-center mb-4">
+
+        <span class="badge bg-primary-subtle text-primary px-3 py-2 mb-2">
+
+            <i class="bi bi-question-circle me-1"></i>
+
+            Need Help?
+
+        </span>
+
+        <h2 class="fw-bold">
+
+            Frequently Asked Questions
+
+        </h2>
+
+        <p class="text-muted mb-0">
+
+            Find answers to common questions about this event.
+
+        </p>
+
+    </div>
+
+
+    <div
+        class="accordion accordion-flush shadow-sm rounded-4 overflow-hidden"
+        id="eventFAQ"
+    >
+
+        {% for faq in faqs %}
+
+        <div class="accordion-item border-0">
+
+            <h2
+                class="accordion-header"
+                id="faqHeading{{ faq.id }}"
+            >
+
+                <button
+                    class="accordion-button {% if not forloop.first %}collapsed{% endif %} fw-semibold"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#faqCollapse{{ faq.id }}"
+                    aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}"
+                    aria-controls="faqCollapse{{ faq.id }}"
+                >
+
+                    <i class="bi bi-question-circle text-primary me-3"></i>
+
+                    {{ faq.question }}
+
+                </button>
+
+            </h2>
+
+
+            <div
+                id="faqCollapse{{ faq.id }}"
+                class="accordion-collapse collapse {% if forloop.first %}show{% endif %}"
+                aria-labelledby="faqHeading{{ faq.id }}"
+                data-bs-parent="#eventFAQ"
+            >
+
+                <div class="accordion-body text-muted px-4 py-3">
+
+                    {{ faq.answer|linebreaksbr }}
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</section>
+
+{% endif %}
 
 <!-- =====================================================
 RELATED EVENTS
