@@ -378,17 +378,25 @@ python -m pip install -r requirements.txt
 
 # 🔐 Environment Variables
 
-If the chatbot is enabled, configure the Gemini API key through an environment variable.
+Eventify is configured entirely through environment variables, so the
+same codebase runs safely in both development and production.
 
-Create a `.env` file in the project root:
+Copy the example file and fill in real values:
 
-```env
-GEMINI_API_KEY=your_gemini_api_key_here
+```bash
+cp .env.example .env
 ```
 
-Never commit your real API key to GitHub.
+| Variable | Required | Description |
+|---|---|---|
+| `DJANGO_SECRET_KEY` | Recommended | Django's cryptographic secret key. A safe development default is used if omitted, but **must** be set to a unique, random value in production. Generate one with `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"` |
+| `DJANGO_DEBUG` | No | `True` for development (default), `False` for production. Setting this to `False` automatically enables HTTPS redirects, secure cookies, and HSTS. |
+| `DJANGO_ALLOWED_HOSTS` | Only if `DEBUG=False` | Comma-separated list of hostnames the app is allowed to serve, e.g. `eventify.com,www.eventify.com` |
+| `DJANGO_CSRF_TRUSTED_ORIGINS` | Only if behind HTTPS/a custom domain | Comma-separated list of trusted origins, e.g. `https://eventify.com` |
+| `GEMINI_API_KEY` | Only for the AI chatbot | Enables the Eventify Assistant. Leave blank to disable it. |
 
-The `.env` file should remain excluded through `.gitignore`.
+Never commit your real `.env` file to GitHub — it's already excluded
+via `.gitignore`.
 
 ---
 

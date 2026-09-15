@@ -13,8 +13,18 @@ from .forms import EventCategoryForm, EventForm
 from .models import Event, EventCategory
 
 
+def is_admin(user):
+    """
+    True for Django superusers as well as users whose profile
+    role is explicitly ADMIN. Every admin-only permission check
+    in this module should go through this helper so a superuser
+    account is never accidentally locked out of admin features.
+    """
+    return user.is_superuser or user.role == "ADMIN"
+
+
 def get_dashboard_type(user):
-    if user.is_superuser or user.role == "ADMIN":
+    if is_admin(user):
         return "admin"
     elif user.role == "ORGANIZER":
         return "organizer"
@@ -35,7 +45,7 @@ def home(request):
 @login_required
 def category_list(request):
 
-    if request.user.role != "ADMIN":
+    if not is_admin(request.user):
         messages.error(
             request,
             "You do not have permission to access this page.",
@@ -88,7 +98,7 @@ def category_list(request):
 @login_required
 def category_create(request):
 
-    if request.user.role != "ADMIN":
+    if not is_admin(request.user):
         messages.error(
             request,
             "You do not have permission to perform this action.",
@@ -138,7 +148,7 @@ def category_create(request):
 @login_required
 def category_update(request, pk):
 
-    if request.user.role != "ADMIN":
+    if not is_admin(request.user):
         messages.error(
             request,
             "You do not have permission to perform this action.",
@@ -197,7 +207,7 @@ def category_update(request, pk):
 @login_required
 def category_delete(request, pk):
 
-    if request.user.role != "ADMIN":
+    if not is_admin(request.user):
         messages.error(
             request,
             "You do not have permission to perform this action.",
@@ -449,10 +459,7 @@ def event_detail(request, slug):
 @login_required
 def event_create(request):
 
-    if request.user.role not in [
-        "ADMIN",
-        "ORGANIZER",
-    ]:
+    if not is_admin(request.user) and request.user.role != "ORGANIZER":
 
         messages.error(
             request,
@@ -523,7 +530,7 @@ def event_update(request, slug):
 
     if (
         request.user != event.organizer
-        and request.user.role != "ADMIN"
+        and not is_admin(request.user)
     ):
         messages.error(
             request,
@@ -603,7 +610,7 @@ def event_delete(request, slug):
 
     if (
         request.user != event.organizer
-        and request.user.role != "ADMIN"
+        and not is_admin(request.user)
     ):
         messages.error(
             request,
@@ -644,7 +651,7 @@ def event_delete(request, slug):
 @login_required
 def my_events(request):
 
-    if request.user.role == "ADMIN":
+    if is_admin(request.user):
 
         events = (
             Event.objects

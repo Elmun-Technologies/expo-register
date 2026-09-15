@@ -273,9 +273,15 @@ Dashboard | Eventify
 ========================== -->
 
 
+<button id="backToTop" type="button" aria-label="Back to top">
+<i class="bi bi-arrow-up"></i>
+</button>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 
 <script src="{% static 'js/dashboard.js' %}"></script>
+
+<script src="{% static 'js/back-to-top.js' %}"></script>
 
 {% include "dashboard/components/customization.html" %}
 

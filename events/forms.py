@@ -146,6 +146,22 @@ class EventForm(forms.ModelForm):
             ),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # When editing an event whose original date has already
+        # passed (e.g. fixing a typo in the venue of a completed
+        # event), the "must be in the future" rules below no
+        # longer make sense and would make the event permanently
+        # un-editable. Detect that case up front so clean() can
+        # relax those specific checks for this instance only.
+        self._editing_past_event = bool(
+            self.instance
+            and self.instance.pk
+            and self.instance.event_date
+            and self.instance.event_date < timezone.localdate()
+        )
+
     # ==========================================================
     # DATE / TIME VALIDATION
     # ==========================================================
@@ -196,7 +212,7 @@ class EventForm(forms.ModelForm):
         # 2. EVENT DATE CANNOT BE IN THE PAST
         # ======================================================
 
-        if event_date < today:
+        if event_date < today and not self._editing_past_event:
 
             self.add_error(
                 "event_date",
@@ -250,7 +266,7 @@ class EventForm(forms.ModelForm):
         # 6. EVENT START CANNOT BE IN THE PAST
         # ======================================================
 
-        if event_start:
+        if event_start and not self._editing_past_event:
 
             if event_start <= now:
 
@@ -276,7 +292,7 @@ class EventForm(forms.ModelForm):
                 timezone.get_current_timezone(),
             )
 
-            if event_end <= now:
+            if event_end <= now and not self._editing_past_event:
 
                 self.add_error(
                     "end_time",
@@ -297,7 +313,7 @@ class EventForm(forms.ModelForm):
         # 9. REGISTRATION DEADLINE CANNOT BE IN THE PAST
         # ======================================================
 
-        if registration_deadline <= now:
+        if registration_deadline <= now and not self._editing_past_event:
 
             self.add_error(
                 "registration_deadline",

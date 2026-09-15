@@ -7,11 +7,39 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(BASE_DIR / ".env")
 
-SECRET_KEY = "django-insecure-event-management-system"
 
-DEBUG = True
+# --------------------------------------------------
+# Core Security Settings
+# --------------------------------------------------
+# These now come from environment variables so the project is
+# production-ready out of the box. Sensible development defaults
+# are used automatically when the variables are not set, so
+# `python manage.py runserver` keeps working with zero setup.
+# See .env.example for the full list of variables.
 
-ALLOWED_HOSTS = []
+SECRET_KEY = os.getenv(
+    "DJANGO_SECRET_KEY",
+    "django-insecure-event-management-system-dev-only",
+)
+
+DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
+
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
+    if host.strip()
+]
+
+if DEBUG and not ALLOWED_HOSTS:
+    # Local development only. In production, ALLOWED_HOSTS must
+    # always be supplied explicitly via the environment.
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
+]
 
 
 # --------------------------------------------------
@@ -208,10 +236,21 @@ SERVER_EMAIL = DEFAULT_FROM_EMAIL
 # --------------------------------------------------
 # Security (Production)
 # --------------------------------------------------
+# Automatically hardened whenever DEBUG=False, so a production
+# deployment is secure by default without extra steps. These stay
+# relaxed in local development so http://127.0.0.1:8000 keeps
+# working without HTTPS.
 
-# SECURE_SSL_REDIRECT = True
-# SESSION_COOKIE_SECURE = True
-# CSRF_COOKIE_SECURE = True
+SECURE_SSL_REDIRECT = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
+SECURE_HSTS_SECONDS = 60 * 60 * 24 * 30 if not DEBUG else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = not DEBUG
+
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -221,3 +260,37 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # --------------------------------------------------
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+
+# --------------------------------------------------
+# Logging
+# --------------------------------------------------
+# Errors always print to the console (visible in server logs /
+# `runserver` output), so problems in production are never
+# silently swallowed once DEBUG=False turns off the debug page.
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+    },
+}

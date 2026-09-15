@@ -347,7 +347,7 @@ Powerful tools for organizers and attendees.
 
 
 
-<i class="bi bi-calendar-check"></i>
+<div class="feature-icon"><i class="bi bi-calendar-check"></i></div>
 
 
 
@@ -386,7 +386,7 @@ Create, update and manage events easily.
 
 
 
-<i class="bi bi-qr-code-scan"></i>
+<div class="feature-icon"><i class="bi bi-qr-code-scan"></i></div>
 
 
 
@@ -424,7 +424,7 @@ QR based registration system.
 
 
 
-<i class="bi bi-bar-chart"></i>
+<div class="feature-icon"><i class="bi bi-bar-chart"></i></div>
 
 
 
@@ -465,7 +465,92 @@ Track registrations and performance.
 </section>
 
 
+<!-- ==========================
+     HOW IT WORKS SECTION
+========================== -->
 
+<section class="steps-section">
+
+<div class="container">
+
+<div class="section-heading">
+
+<h2>
+How Eventify Works
+</h2>
+
+<p>
+Get from idea to a fully booked event in three simple steps.
+</p>
+
+</div>
+
+<div class="row g-4">
+
+<div class="col-md-4">
+<div class="step-card">
+<div class="step-number">1</div>
+<div class="feature-icon"><i class="bi bi-pencil-square"></i></div>
+<h4>Create Your Event</h4>
+<p>Set up your event details, schedule and ticketing in minutes with our guided flow.</p>
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="step-card">
+<div class="step-number">2</div>
+<div class="feature-icon"><i class="bi bi-share-fill"></i></div>
+<h4>Share &amp; Sell</h4>
+<p>Publish your event and let attendees discover, register and secure their digital tickets.</p>
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="step-card">
+<div class="step-number">3</div>
+<div class="feature-icon"><i class="bi bi-qr-code"></i></div>
+<h4>Check In &amp; Track</h4>
+<p>Scan QR tickets at the door and monitor turnout with live analytics and reports.</p>
+</div>
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- ==========================
+     CTA BANNER
+========================== -->
+
+<section class="cta-banner">
+
+<div class="container">
+
+<div class="cta-box">
+
+<div class="cta-text">
+<h2>Ready to host your next unforgettable event?</h2>
+<p>Join thousands of organizers already using Eventify to plan, promote and run their events seamlessly.</p>
+</div>
+
+<div class="cta-actions">
+<a href="{% url 'register' %}" class="btn btn-light btn-lg">
+<i class="bi bi-rocket-takeoff-fill me-2"></i>
+Get Started Free
+</a>
+<a href="{% url 'event_list' %}" class="btn btn-outline-light btn-lg">
+Browse Events
+</a>
+</div>
+
+</div>
+
+</div>
+
+</section>
 
 
 {% endblock %}
