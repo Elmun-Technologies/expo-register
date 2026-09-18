@@ -217,6 +217,65 @@ def visit_alert_on_detection(visitor, zone):
     )
 
 
+def recognize_for_camera(camera, image_path=None):
+    """
+    Kamera kadridan mehmonni tanib olish (face recognition).
+
+    Agar surat berilmasa va kamera LIVE bo'lsa, Hikvision'dan jonli
+    snapshot olinadi; SIMULATION'da esa virtual kadr bo'ladi (bu holda
+    haqiqiy tanib bo'lmaydi — yo'l bo'yicha "kutilayotgan" mehmon
+    qaytariladi).
+
+    Tanilgan mehmon uchun TrackingEvent (SEEN) yoziladi va qaytariladi:
+        (visitor, confidence)
+    """
+    from . import face, hikvision
+
+    # Kadr mavjud bo'lsa — chuqur tanish
+    if image_path:
+        visitor, confidence = face.match_visitor(image_path)
+        if visitor:
+            TrackingEvent.objects.create(
+                visitor=visitor,
+                camera=camera,
+                zone=camera.zone,
+                kind=TrackingEvent.Kind.SEEN,
+                detected_at=timezone.now(),
+                note=f"Kamera tanidi (confidence {confidence:.0f})",
+            )
+            return visitor, confidence
+        return None, confidence
+
+    # LIVE kamera — Hikvision snapshot
+    if camera.mode == Camera.Mode.LIVE:
+        try:
+            data = hikvision.capture_snapshot(camera)
+        except Exception:
+            data = None
+        if data:
+            import tempfile, os
+            fd, path = tempfile.mkstemp(suffix=".jpg")
+            with os.fdopen(fd, "wb") as fh:
+                fh.write(data)
+            try:
+                visitor, confidence = face.match_visitor(path)
+            finally:
+                os.unlink(path)
+            if visitor:
+                TrackingEvent.objects.create(
+                    visitor=visitor,
+                    camera=camera,
+                    zone=camera.zone,
+                    kind=TrackingEvent.Kind.SEEN,
+                    detected_at=timezone.now(),
+                    note="Hikvision kadrdan tanidi",
+                )
+                return visitor, confidence
+            return None, confidence
+
+    return None, None
+
+
 def _zone_camera(zone):
     camera = Camera.objects.filter(is_enabled=True, zone__iexact=zone).first()
     if camera:

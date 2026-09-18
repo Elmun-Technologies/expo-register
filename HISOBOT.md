@@ -51,7 +51,7 @@ Stend egasi: "mening stendimga qancha mehmon keldi, qancha vaqt turishdi" statis
 | `hikvision.py` | Hikvision ISAPI/RTSP adapter: **Digest auth**, jonli snapshot, PTZ preset, stream URL |
 | `simulation.py` | Demo rejim uchun deterministik harakat yo'llari |
 | `forms.py` | Kiosk formasi (O'z/Rus tilli) |
-| `face.py` | Yuzni aniqlash (OpenCV Haar) + yuz izi (hash) + **dublikat nazorati** |
+| `face.py` | Yuzni aniqlash (Haar) + yuz izi (hash) + **dublikat nazorati** + **LBPH yuz tanish** (kamera kadridan mehmonni tanidi) |
 | `pdf.py` | PDF hisobotlar: stend analitikasi + mehmonlar ro'yxati (Cyrillic qo'llab-quvvatlash bilan) |
 | `sms.py` | **Eskiz.uz** SMS xabarnoma adapteri (O'zbekiston SMS provayderi) |
 | `telegram.py` | Telegram xabarnoma (admin guruhga yangi mehmon haqida xabar) |
@@ -162,6 +162,7 @@ Demo ma'lumotlarni qayta yaratish: `python manage.py seed_expo_demo`
 3. **Stend analitikasi** — qaysi stend qanchalik qiziq? (noyob mehmonlar, tashriflar, o'rtacha vaqt).
 4. **Reyting** — eng qiziq stendlar ro'yxati (admin uchun).
 5. **Yuzni aniqlash + dublikat nazorati** — kiosk kamerasi suratidan yuz olinadi va bir odam ikkinchi marta ro'yxatdan o'tmaydi (ism yoki yuz bo'yicha aniqlanadi).
+5a. **Yuz tanish (face recognition)** — kuzatuv kamerasi kadridan yuz olinib, u qaysi mehmonga tegishli ekanini **LBPH modeli** aniqlaydi va TrackingEvent yozadi; LIVE Hikvision snapshot'dan ham ishlaydi.
 6. **Telegram bot → QR → darvoza oqimi** — mijoz Telegram'da ro'yxatdan o'tadi, QR oladi, manager skanerlab ichkariga kiritadi, kuzatuv darhol boshlanadi.
 7. **Offline darvoza** — internet uzilganda ham manager telefoni ishlaydi: yozuv navbatga saqlanadi, ulanish qaytganda avtomatik sinxronlanadi (takror yozilmaydi).
 8. **QR-kartochka (Badge)** — har bir mehmonga unikal QR-kodli kartochka, chop etish imkoniyati bilan.
@@ -175,7 +176,7 @@ Demo ma'lumotlarni qayta yaratish: `python manage.py seed_expo_demo`
 
 ### Kelajakda (qatlam tayyor, ulash kerak)
 1. **Kamera'dan real ob'ekt kuzatish** — Hikvision'ning o'z motion/abonement eventlarini tinglab (ISAPI event subscription) mehmonga bog'lash.
-2. **Chuqur yuz tanish (face recognition)** — hozir Haar + yuz izi ishlayapti; katta tadbir uchun FaceNet/Iris.ai kabi chuqur model ulash mumkin (qatlam `face.py` da almashtiriladi).
+2. **Chuqur yuz tanish (FaceNet/Iris.ai)** — hozir LBPH ishlayapti; katta tadbir (minglab mehmon) uchun chuqur model ulash mumkin (qatlam `face.py` da almashtiriladi).
 3. **To'lov integratsiyasi** — Payme / Click / Payze (pullik tadbirlar uchun).
 4. **Mobil ilova** — kiosk va monitoring'ni tabletkada ishlatish.
 5. **Eskiz.uz real token** — `.env` da `ESKIZ_EMAIL`/`ESKIZ_PASSWORD` kiritilgach SMS avtomatik ishlaydi (hozir konsol rejimi).
@@ -185,11 +186,11 @@ Demo ma'lumotlarni qayta yaratish: `python manage.py seed_expo_demo`
 ## 7. Texnik holat
 
 - ✅ `python manage.py check` — 0 xato
-- ✅ `python manage.py test expo` — 34/34 test o'tdi
+- ✅ `python manage.py test expo` — 38/38 test o'tdi
 - ✅ `migrate` — barcha migratsiyalar qo'llangan (`face_hash`, `visit_type`, `source`, `offline_id`, `registration`)
 - ✅ Server ishga tushirilgan (LIVE PREVIEW, port 8000)
 - ✅ GitHub: barcha ishlar push qilindi
-- ✅ OpenCV 4.10 yuzni aniqlash + haarcascade modeli bog'langan
+- ✅ OpenCV 4.10 (contrib) yuzni aniqlash + haarcascade + LBPH yuz tanish modeli bog'langan
 - ✅ QR skaner (html5-qrcode) lokal — offline ishlaydi
 - ✅ Service Worker — gate sahifasi offline keshlanadi
 
@@ -198,7 +199,7 @@ Demo ma'lumotlarni qayta yaratish: `python manage.py seed_expo_demo`
 ## 8. Keyingi qadamlar (tavsiyalar)
 
 1. **Haqiqiy kamera seriallarini kiriting** va LIVE rejimni sinab ko'ring (`Camera.mode = LIVE`).
-2. **Chuqur yuz tanish (FaceNet/Iris.ai)** — katta tadbir uchun aniqroq tanish (hozir Haar+iz ishlayapti).
+2. **Chuqur yuz tanish (FaceNet/Iris.ai)** — katta tadbir uchun aniqroq tanish (hozir LBPH ishlayapti).
 3. **Payme/Click to'lov** — pullik eksponingiz bo'lsa.
 4. **SMS xabarnoma (real)** — `env.example` asosida `.env` yarating, Eskiz.uz login/parol kiriting.
 5. **Brendlash** — "Expo Control" nomi/logo'larini to'liq almashtirish.

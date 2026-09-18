@@ -614,3 +614,75 @@ class AutoTrackingTests(TestCase):
         visitor.refresh_from_db()
         self.assertEqual(visitor.status, ExpoVisitor.Status.LEFT)
         self.assertIsNotNone(visitor.check_out_at)
+
+
+class FaceRecognizerTests(TestCase):
+    """LBPH yuz tanish qatlami."""
+
+    def test_recognizer_available(self):
+        from expo import face
+
+        self.assertTrue(face._recognizer_available())
+
+    def test_recognizer_train_predict_roundtrip(self):
+        """Model o'rgatilgan yuzni qayta aniq tanishi kerak."""
+        import cv2
+        import numpy as np
+        from expo import face
+
+        # Sintetik "yuzga o'xshash" turli fazali tasvirlar (Haar'ga muhtoj emas —
+        # past-daraja train/predict to'g'ridan-to'g'ri sinaymiz).
+        def make_face(seed, size=(100, 100)):
+            rng = np.random.default_rng(seed)
+            img = np.zeros(size, dtype=np.uint8)
+            # oval yuz
+            for y in range(size[0]):
+                for x in range(size[1]):
+                    dx = (x - 50) / 40
+                    dy = (y - 50) / 50
+                    if dx * dx + dy * dy <= 1:
+                        img[y, x] = int(140 + rng.integers(0, 60))
+            return img
+
+        recognizer = cv2.face.LBPHFaceRecognizer_create()
+        f1 = make_face(1)
+        f2 = make_face(2)   # boshqa "odam"
+        f1b = make_face(1)  # 1 ning boshqacha tasviri (bir xil seed)
+
+        recognizer.train([f1, f2], np.array([0, 1], dtype=np.int32))
+
+        label, conf = recognizer.predict(f1b)
+        self.assertEqual(label, 0)
+
+        label2, _ = recognizer.predict(f2)
+        self.assertEqual(label2, 1)
+
+    def test_train_recognizer_skips_photo_less(self):
+        from expo import face
+
+        ExpoVisitor.objects.create(
+            first_name="Suratsiz", last_name="Mehmon",
+            purpose=ExpoVisitor.Purpose.BUSINESS,
+        )
+        rec, mapping, n = face.train_recognizer()
+        self.assertEqual(n, 0)
+        self.assertIsNone(rec)
+
+    def test_match_visitor_no_faces_on_blank(self):
+        import cv2
+        import numpy as np
+        import tempfile
+        import os
+        from expo import face
+
+        # Bo'sh rasmda tanish yo'q
+        f = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+        cv2.imwrite(f.name, np.zeros((120, 120, 3), dtype=np.uint8))
+        try:
+            rec = face.train_recognizer()[0]
+            visitor_pk, conf = face.predict_face(
+                rec, {}, f.name
+            )
+            self.assertIsNone(visitor_pk)
+        finally:
+            os.unlink(f.name)
