@@ -11,6 +11,7 @@ class User(AbstractUser):
         ADMIN = "ADMIN", "Admin"
         ORGANIZER = "ORGANIZER", "Organizer"
         ATTENDEE = "ATTENDEE", "Attendee"
+        SECURITY = "SECURITY", "Security (Xavfsizlik)"
 
     role = models.CharField(
         max_length=20,

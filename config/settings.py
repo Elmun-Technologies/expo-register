@@ -41,6 +41,14 @@ CSRF_TRUSTED_ORIGINS = [
     if origin.strip()
 ]
 
+if DEBUG:
+    # Arena sandbox live-preview proxy (https://{port}-{id}.e2b.app).
+    ALLOWED_HOSTS += ["*"]
+    CSRF_TRUSTED_ORIGINS += [
+        "https://*.e2b.app",
+        "http://*.e2b.app",
+    ]
+
 
 # --------------------------------------------------
 # Applications
@@ -62,6 +70,7 @@ INSTALLED_APPS = [
     "feedback",
     "faq",
     "messaging",
+    "expo",
 
     # Django Apps
     "django.contrib.admin",
@@ -154,7 +163,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "Asia/Kolkata"
+TIME_ZONE = "Asia/Tashkent"
 
 USE_I18N = True
 

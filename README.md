@@ -641,6 +641,46 @@ Potential future improvements include:
 
 ---
 
+# 🎥 Expo Monitoring (Uzbekistan Edition)
+
+Eventify ustiga qurilgan **Expo nazorat moduli** — ko'rgazma (expo) hududiga
+kiruvchi har bir mehmonni to'liq kuzatib borish tizimi.
+
+## Oqim
+
+1. **Kiosk** (`/expo/kiosk/`) — mehmon ism, familiya va (ixtiyoriy) kompaniya,
+   maqsad ma'lumotlarini kiritadi. O'zbekcha va ruscha interfeys.
+2. Mehmon ro'yxatdan o'tishi bilan tizim **xabar** yuboradi va
+   **kuzatuvni boshlaydi** (xavfsizlik xodimi panelida ko'rinadi).
+3. **Monitoring** (`/expo/monitor/`) — kameralar, jonli ogohlantirishlar va
+   ichkaridagi mehmonlar real vaqtda ko'rsatiladi.
+4. **Stend analitikasi** (`/expo/analytics/`) — har bir stend oldiga qancha
+   mehmon kelgani, qancha vaqt turishgani hisoblab chiqiladi. Bu kelajakdagi
+   expolar uchun muhim statistika.
+
+## Kameralar
+
+- **SIMULATION** rejimi (hozirgi): haqiqiy qurilmasiz to'liq demo.
+- **LIVE** rejimi: Hikvision ISAPI / RTSP qatlami tayyor
+  (`expo/hikvision.py`). Kamera `ip_address`, `username`, `password`,
+  `rtsp_url` kiritilgach haqiqiy oqimga ulash mumkin.
+
+## Rollar
+
+- **Admin** — monitor, qurilmalar, barcha stendlar statistikasi.
+- **Organizer (stend egasi)** — faqat o'z stendi statistikasi.
+- Mehmonlar kiosk orqali maxsus akkauntsiz ro'yxatdan o'tadi.
+
+## Demo ma'lumotlar
+
+```bash
+python manage.py seed_expo_demo
+```
+
+8 ta kamera, 8 ta stend va `expo_admin / expo12345` admin hisobi yaratiladi.
+
+---
+
 # 📜 License
 
 This project is licensed under the **MIT License**.

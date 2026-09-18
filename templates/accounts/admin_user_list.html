@@ -248,6 +248,13 @@ User Management | Eventify
                                 Admin
                             </option>
 
+                            <option
+                                value="SECURITY"
+                                {% if selected_role == "SECURITY" %}selected{% endif %}
+                            >
+                                Security (Xavfsizlik)
+                            </option>
+
                         </select>
 
                     </div>
@@ -456,6 +463,12 @@ User Management | Eventify
 
                                     <span class="badge bg-primary">
                                         Organizer
+                                    </span>
+
+                                {% elif user_obj.role == "SECURITY" %}
+
+                                    <span class="badge bg-danger">
+                                        Security
                                     </span>
 
                                 {% else %}

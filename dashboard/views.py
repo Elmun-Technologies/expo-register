@@ -1,7 +1,7 @@
 from multiprocessing import context
 from urllib import request
 
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.db.models import Count
@@ -64,6 +64,10 @@ def is_attendee(user):
 def dashboard_home(request):
 
     user = request.user
+
+    # Security staff go straight to the live monitoring screen
+    if user.role == User.Role.SECURITY:
+        return redirect("expo_monitor")
 
     # Django superuser or admin role
     if user.is_superuser or user.role == User.Role.ADMIN:

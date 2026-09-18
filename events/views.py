@@ -26,6 +26,8 @@ def is_admin(user):
 def get_dashboard_type(user):
     if is_admin(user):
         return "admin"
+    elif user.role == "SECURITY":
+        return "security"
     elif user.role == "ORGANIZER":
         return "organizer"
     return "attendee"

@@ -193,6 +193,7 @@ def admin_user_list(request):
         User.Role.ORGANIZER,
         User.Role.ATTENDEE,
         User.Role.ADMIN,
+        User.Role.SECURITY,
     ]:
 
         users = users.filter(

@@ -1,0 +1,260 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+
+{% block title %}Expo Monitoring{% endblock %}
+
+{% block css %}
+<style>
+    .monitor-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1rem;
+    }
+    .cam-frame {
+        position: relative;
+        border-radius: 1rem;
+        overflow: hidden;
+        background: #0b1220;
+        border: 1px solid rgba(255,255,255,.08);
+        min-height: 180px;
+    }
+    .cam-frame .cam-video {
+        background:
+            radial-gradient(circle at 20% 30%, rgba(99,102,241,.35), transparent 45%),
+            radial-gradient(circle at 80% 70%, rgba(139,92,246,.25), transparent 40%),
+            linear-gradient(135deg, #101827 0%, #1e293b 100%);
+        aspect-ratio: 16/10;
+        display: flex; align-items: center; justify-content: center;
+        color: rgba(255,255,255,.85);
+    }
+    .cam-frame .cam-video .scanline {
+        position: absolute; inset: 0;
+        background: linear-gradient(180deg, transparent 0%, rgba(99,102,241,.12) 50%, transparent 100%);
+        animation: scan 3s linear infinite;
+    }
+    @keyframes scan { 0%{transform:translateY(-100%);} 100%{transform:translateY(100%);} }
+    .cam-frame .cam-label {
+        position: absolute; bottom: 0; left: 0; right: 0;
+        background: linear-gradient(transparent, rgba(0,0,0,.8));
+        color: #fff; padding: 1.6rem .8rem .6rem;
+        font-size: .8rem; display: flex; justify-content: space-between; align-items:center;
+    }
+    .dot-online { width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block; box-shadow:0 0 8px #22c55e; }
+    .visitor-chips { display:flex; flex-wrap: wrap; gap: .6rem; }
+    .visitor-chip {
+        border:1px solid rgba(255,255,255,.12); background:#fff; color:#111;
+        border-radius:.8rem; padding:.55rem .8rem; box-shadow:0 2px 10px rgba(0,0,0,.05);
+        min-width: 210px;
+    }
+    .track-line { max-height: 420px; overflow-y:auto; }
+    .track-item { border-left:3px solid #6366f1; padding:.5rem .75rem; margin-bottom:.5rem; background:#f8fafc; border-radius:.4rem; font-size:.85rem;}
+    .track-item.warn { border-color:#f59e0b; }
+</style>
+{% endblock %}
+
+{% block dashboard_content %}
+
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap mb-4">
+    <div>
+        <h2 class="fw-bold"><i class="bi bi-camera-video-fill text-primary me-2"></i>Expo Monitoring</h2>
+        <p class="text-muted mb-0">Har bir mehmonni real vaqtda kuzatish — nazorat paneli</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'expo_kiosk' %}" class="btn btn-outline-primary" target="_blank">
+            <i class="bi bi-upc-scan me-2"></i>Kioskni ochish
+        </a>
+        <a href="{% url 'expo_devices' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-gear me-2"></i>Qurilmalar
+        </a>
+    </div>
+</div>
+
+<!-- ===== KPI CARDS ===== -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3">
+        <div class="stat-card">
+            <i class="bi bi-people-fill"></i>
+            <h2 id="kpiActive">{{ overview.active_visitors }}</h2>
+            <p>Hozir ichkarida</p>
+        </div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="stat-card">
+            <i class="bi bi-person-badge-fill"></i>
+            <h2 id="kpiToday">{{ overview.total_today }}</h2>
+            <p>Bugun jami</p>
+        </div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="stat-card">
+            <i class="bi bi-camera-fill"></i>
+            <h2><span id="kpiCamOnline">{{ overview.cameras_online }}</span><small class="fs-6 text-muted">/{{ overview.cameras_total }}</small></h2>
+            <p>Kameralar onlayn</p>
+        </div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="stat-card">
+            <i class="bi bi-broadcast-pin"></i>
+            <h2 id="kpiSeen">{{ overview.total_seen_24h }}</h2>
+            <p>24 soatda aniqlashlar</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- ===== Kameralar ===== -->
+    <div class="col-xl-7">
+        <div class="dashboard-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-camera-video me-2"></i>Kuzatuv kameralari</span>
+                <span class="badge bg-secondary" id="camStatusBadge">yuklanmoqda…</span>
+            </div>
+            <div class="card-body">
+                <div class="monitor-grid" id="cameraGrid">
+                    {% for cam in cameras %}
+                    <div class="cam-frame" id="cam-{{ cam.id }}">
+                        <div class="cam-video">
+                            <span class="scanline"></span>
+                            <i class="bi bi-camera-video fs-2"></i>
+                        </div>
+                        <div class="cam-label">
+                            <span>{{ cam.name }}</span>
+                            <span>
+                                {% if cam.is_online %}
+                                <span class="dot-online"></span> onlayn
+                                {% else %}
+                                <span class="text-muted">oflayn</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-muted p-4">Kameralar hali qo'shilmagan. Panel (admin) orqali qo'shing.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Ogohlantirishlar ===== -->
+    <div class="col-xl-5">
+        <div class="dashboard-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-bell-fill me-2"></i>Oxirgi xabarlar</span>
+                <span class="badge bg-danger" id="alertCount"></span>
+            </div>
+            <div class="card-body">
+                <div class="track-line" id="alertFeed">
+                    <div class="text-muted">Yuklanmoqda…</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Ichkaridagi mehmonlar ===== -->
+    <div class="col-12">
+        <div class="dashboard-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-person-badge me-2"></i>Hozir ichkarida</span>
+                <button class="btn btn-sm btn-outline-primary" onclick="refreshLive()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Yangilash
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="visitor-chips" id="visitorChips">
+                    <div class="text-muted">Yuklanmoqda…</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script>
+    const ADVANCE_URL = "/expo/api/advance/";
+
+    async function refreshLive() {
+        try {
+            const res = await fetch("{% url 'expo_monitor_live' %}");
+            const data = await res.json();
+            renderOverview(data.overview);
+            renderAlerts(data.alerts);
+            renderVisitors(data.active_visitors);
+            renderCameras(data.cameras);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function renderOverview(o) {
+        document.getElementById('kpiActive').textContent = o.active_visitors;
+        document.getElementById('kpiToday').textContent = o.total_today;
+        document.getElementById('kpiCamOnline').textContent = o.cameras_online;
+        document.getElementById('kpiSeen').textContent = o.total_seen_24h;
+    }
+
+    function renderAlerts(alerts) {
+        const feed = document.getElementById('alertFeed');
+        document.getElementById('alertCount').textContent = alerts.length;
+        if (!alerts.length) { feed.innerHTML = '<div class="text-muted">Xabar yo\'q</div>'; return; }
+        feed.innerHTML = alerts.map(a => {
+            let cls = 'track-item';
+            if (a.level === 'SUCCESS') cls += ' track-line-success';
+            if (a.level === 'WARNING') cls += ' warn';
+            const icon = a.level === 'SUCCESS' ? 'person-plus-fill' : (a.level === 'WARNING' ? 'person-dash-fill' : 'broadcast-pin');
+            return `<div class="${cls}"><i class="bi bi-${icon} me-1"></i><strong>${a.message}</strong><div class="text-muted small">${a.created_at}</div></div>`;
+        }).join('');
+    }
+
+    function renderVisitors(visitors) {
+        const wrap = document.getElementById('visitorChips');
+        if (!visitors.length) { wrap.innerHTML = '<div class="text-muted">Hozir ichkarida mehmon yo\'q</div>'; return; }
+        wrap.innerHTML = visitors.map(v => `
+            <div class="visitor-chip">
+                <div class="d-flex justify-content-between align-items-start">
+                    <strong>${v.name}</strong>
+                    <span class="badge bg-success">ichkarida</span>
+                </div>
+                <div class="text-muted small">${v.company || '—'} · ${v.purpose}</div>
+                <div class="text-muted small">📍 ${v.current_zone || 'Kirish'} · ${v.minutes_inside} daqiqa</div>
+                <div class="mt-1">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="advanceVisitor(${v.id}, this)">
+                        <i class="bi bi-signpost-split me-1"></i>Keyingi zona
+                    </button>
+                    <a href="/expo/visitors/${v.id}/" class="btn btn-sm btn-outline-primary">Yo'l</a>
+                </div>
+            </div>`).join('');
+    }
+
+    function renderCameras(cams) {
+        let online = 0; cams.forEach(c => { if (c.is_online) online++; });
+        document.getElementById('camStatusBadge').textContent = `${online}/${cams.length} onlayn`;
+        cams.forEach(c => {
+            const el = document.getElementById('cam-' + c.id);
+            if (!el) return;
+            const lbl = el.querySelector('.cam-label span:last-child');
+            if (lbl) {
+                if (c.is_online) lbl.innerHTML = '<span class="dot-online"></span> onlayn';
+                else lbl.innerHTML = '<span class="text-muted">oflayn</span>';
+            }
+        });
+    }
+
+    async function advanceVisitor(id, btn) {
+        btn.disabled = true;
+        try {
+            const res = await fetch(ADVANCE_URL + id + '/');
+            const data = await res.json();
+            refreshLive();
+        } catch(e) { console.error(e); }
+        finally { btn.disabled = false; }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        refreshLive();
+        setInterval(refreshLive, 5000);
+    });
+</script>
+{% endblock %}

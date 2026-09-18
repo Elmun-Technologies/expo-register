@@ -7,6 +7,17 @@ from .models import User
 class UserRegistrationForm(UserCreationForm):
     email = forms.EmailField(required=True)
 
+    role = forms.ChoiceField(
+        choices=[
+            (User.Role.ATTENDEE, "Attendee"),
+            (User.Role.ORGANIZER, "Organizer"),
+        ],
+        initial=User.Role.ATTENDEE,
+        help_text=(
+            "Security va Admin rollari faqat administrator tomonidan belgilanadi."
+        ),
+    )
+
     class Meta:
         model = User
         fields = (
