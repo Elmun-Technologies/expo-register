@@ -48,7 +48,7 @@ Stend egasi: "mening stendimga qancha mehmon keldi, qancha vaqt turishdi" statis
 | `models.py` | 5 ta model: `Booth` (stend), `Camera` (kamera), `ExpoVisitor` (mehmon), `TrackingEvent` (kuzatuv hodisasi), `VisitAlert` (xabar) |
 | `services.py` | Kuzatuv mantig'i: ro'yxatdan o'tish → xabar → kuzatuv boshlani → zonalar → chiqib ketish |
 | `analytics.py` | Stendlar statistikasi: noyob mehmonlar, tashriflar, o'rtacha qolish vaqti |
-| `hikvision.py` | Hikvision ISAPI/RTSP adapter qatlami (LIVE rejim uchun tayyor) |
+| `hikvision.py` | Hikvision ISAPI/RTSP adapter: **Digest auth**, jonli snapshot, PTZ preset, stream URL |
 | `simulation.py` | Demo rejim uchun deterministik harakat yo'llari |
 | `forms.py` | Kiosk formasi (O'z/Rus tilli) |
 | `face.py` | Yuzni aniqlash (OpenCV Haar) + yuz izi (hash) + **dublikat nazorati** |
@@ -158,7 +158,7 @@ Demo ma'lumotlarni qayta yaratish: `python manage.py seed_expo_demo`
 
 ### Hozir (ishlayapti)
 1. **Mehmonlarni to'liq nazorat** — kim keldi, qachon keldi, qayerga kirdi, qancha turdi, qachon chiqdi.
-2. **Xavfsizlik paneli** — real vaqtda kameralar + ogohlantirishlar + ichkaridagi mehmonlar (avto-yangilanish 5 s).
+2. **Xavfsizlik paneli** — real vaqtda kameralar (jonli kadrlar) + ogohlantirishlar + ichkaridagi mehmonlar (avto-yangilanish 5 s).
 3. **Stend analitikasi** — qaysi stend qanchalik qiziq? (noyob mehmonlar, tashriflar, o'rtacha vaqt).
 4. **Reyting** — eng qiziq stendlar ro'yxati (admin uchun).
 5. **Yuzni aniqlash + dublikat nazorati** — kiosk kamerasi suratidan yuz olinadi va bir odam ikkinchi marta ro'yxatdan o'tmaydi (ism yoki yuz bo'yicha aniqlanadi).
@@ -170,9 +170,10 @@ Demo ma'lumotlarni qayta yaratish: `python manage.py seed_expo_demo`
 11. **Telegram + SMS xabarnoma** — yangi mehmon ro'yxatdan o'tganda admin guruhga Telegram xabar va telefonga Eskiz.uz SMS.
 12. **Admin dashboard integratsiyasi** — Expo ko'rsatkichlari (faol mehmonlar, stendlar, kameralar) asosiy dashboard'da.
 13. **To'liq Eventify funksionalligi** — tadbirlar, QR-ticket, check-in, notification'lar, chatbot.
+14. **Hikvision LIVE qatlami** — `Camera.mode = LIVE` + IP/login/parol bilan: Digest auth, jonli snapshot, PTZ preset, RTSP stream URL; SIMULATION'da virtual kadr.
 
 ### Kelajakda (qatlam tayyor, ulash kerak)
-1. **Haqiqiy Hikvision kameralar** — `Camera.mode = LIVE` qilib IP/login/parol kiritiladi (adapter `hikvision.py` tayyor).
+1. **Kamera'dan avtomatik ob'ekt kuzatish** — Hikvision'ning o'z motion/abonement eventlarini tinglab (ISAPI event subscription) mehmonga bog'lash.
 2. **Chuqur yuz tanish (face recognition)** — hozir Haar + yuz izi ishlayapti; katta tadbir uchun FaceNet/Iris.ai kabi chuqur model ulash mumkin (qatlam `face.py` da almashtiriladi).
 3. **To'lov integratsiyasi** — Payme / Click / Payze (pullik tadbirlar uchun).
 4. **Mobil ilova** — kiosk va monitoring'ni tabletkada ishlatish.
@@ -183,7 +184,7 @@ Demo ma'lumotlarni qayta yaratish: `python manage.py seed_expo_demo`
 ## 7. Texnik holat
 
 - ✅ `python manage.py check` — 0 xato
-- ✅ `python manage.py test expo` — 26/26 test o'tdi
+- ✅ `python manage.py test expo` — 32/32 test o'tdi
 - ✅ `migrate` — barcha migratsiyalar qo'llangan (`face_hash`, `visit_type`, `source`, `offline_id`, `registration`)
 - ✅ Server ishga tushirilgan (LIVE PREVIEW, port 8000)
 - ✅ GitHub: barcha ishlar push qilindi

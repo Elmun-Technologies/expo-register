@@ -34,6 +34,7 @@ urlpatterns = [
     # Devices (kameralar va stendlar)
     path("devices/", views.devices, name="expo_devices"),
     path("devices/camera/<int:camera_id>/toggle/", views.camera_toggle, name="expo_camera_toggle"),
+    path("devices/camera/<int:camera_id>/snapshot/", views.camera_snapshot, name="expo_camera_snapshot"),
 
     # Stend analitikasi
     path("analytics/", views.booth_analytics, name="expo_analytics"),

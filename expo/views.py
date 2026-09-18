@@ -2,6 +2,7 @@ import base64
 import csv
 import io
 import json
+import logging
 import time
 import uuid
 
@@ -190,6 +191,7 @@ def monitor_live_api(request):
             "zone": c.zone,
             "is_online": c.is_online,
             "mode": c.mode,
+            "snapshot_url": f"/expo/devices/camera/{c.id}/snapshot/",
         }
         for c in Camera.objects.filter(is_enabled=True)
     ]
@@ -384,6 +386,44 @@ def camera_toggle(request, camera_id):
             "is_enabled": camera.is_enabled,
         }
     )
+
+
+@login_required
+def camera_snapshot(request, camera_id):
+    """
+    LIVE rejimdagi Hikvision kameradan jonli kadr (snapshot) olish.
+    SIMULATION kamerada demo (virtual) kadr qaytariladi.
+    """
+    if not can_monitor(request.user):
+        return JsonResponse({"error": "forbidden"}, status=403)
+
+    camera = get_object_or_404(Camera, pk=camera_id)
+
+    from . import hikvision as hv
+
+    try:
+        data = hv.capture_snapshot(camera)
+    except hv.HikvisionError as exc:
+        logger = logging.getLogger(__name__)
+        logger.warning("Snapshot xatosi: %r", exc)
+        data = None
+
+    if not data:
+        # SIMULATION / xato — virtual kadr
+        from . import simulation
+
+        seed = camera.id * 7919 + int(time.time() // 30)
+        img = simulation.demo_frame(seed)
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        data = buf.getvalue()
+        content_type = "image/png"
+    else:
+        content_type = "image/jpeg"
+
+    resp = HttpResponse(data, content_type=content_type)
+    resp["Cache-Control"] = "no-store, max-age=0"
+    return resp
 
 
 # ==========================================================

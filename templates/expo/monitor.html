@@ -26,7 +26,14 @@
         aspect-ratio: 16/10;
         display: flex; align-items: center; justify-content: center;
         color: rgba(255,255,255,.85);
+        position: relative;
     }
+    .cam-frame .cam-snap {
+        position: absolute; inset: 0;
+        width: 100%; height: 100%;
+        object-fit: cover; opacity: .92;
+    }
+    .cam-frame .cam-ph { position: relative; opacity: .35; }
     .cam-frame .cam-video .scanline {
         position: absolute; inset: 0;
         background: linear-gradient(180deg, transparent 0%, rgba(99,102,241,.12) 50%, transparent 100%);
@@ -115,7 +122,10 @@
                     <div class="cam-frame" id="cam-{{ cam.id }}">
                         <div class="cam-video">
                             <span class="scanline"></span>
-                            <i class="bi bi-camera-video fs-2"></i>
+                            <img class="cam-snap" id="snap-{{ cam.id }}"
+                                 src="{% url 'expo_camera_snapshot' cam.id %}"
+                                 alt="{{ cam.name }}" loading="lazy">
+                            <i class="bi bi-camera-video fs-2 cam-ph"></i>
                         </div>
                         <div class="cam-label">
                             <span>{{ cam.name }}</span>
@@ -125,6 +135,7 @@
                                 {% else %}
                                 <span class="text-muted">oflayn</span>
                                 {% endif %}
+                                <span class="badge {% if cam.mode == 'LIVE' %}bg-danger{% else %}bg-secondary{% endif %} ms-1">{{ cam.get_mode_display }}</span>
                             </span>
                         </div>
                     </div>
@@ -188,6 +199,7 @@
 {% block js %}
 <script>
     const ADVANCE_URL = "/expo/api/advance/";
+    const SNAP_BASE = "/expo/devices/camera/";
 
     async function refreshLive() {
         try {
@@ -198,9 +210,20 @@
             renderVisitors(data.active_visitors);
             renderCameras(data.cameras);
             renderZones(data.zones || {});
+            refreshSnapshots(data.cameras || []);
         } catch (e) {
             console.error(e);
         }
+    }
+
+    function refreshSnapshots(cams) {
+        // Kamera kadrlarini yangilash (kesh'dan qutilish uchun ?t=)
+        cams.forEach(function (c) {
+            const img = document.getElementById('snap-' + c.id);
+            if (img) {
+                img.src = SNAP_BASE + c.id + '/?t=' + Date.now();
+            }
+        });
     }
 
     var zoneChart = null;

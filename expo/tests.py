@@ -503,3 +503,56 @@ class TelegramBotTests(TestCase):
 
         with self.assertRaises(RuntimeError):
             tb.build_application(token="")
+
+
+class HikvisionTests(TestCase):
+    """Hikvision adapter — Digest auth va ish rejimlari."""
+
+    def test_digest_challenge_parse(self):
+        from expo import hikvision
+
+        header = 'Digest realm="hikvision", nonce="abc123", qop="auth", opaque="xyz"'
+        params = hikvision._parse_digest_challenge(header)
+        self.assertEqual(params["realm"], "hikvision")
+        self.assertEqual(params["nonce"], "abc123")
+        self.assertEqual(params["qop"], "auth")
+        self.assertEqual(params["opaque"], "xyz")
+
+    def test_digest_authorization(self):
+        from expo import hikvision
+
+        params = {"realm": "hikvision", "nonce": "abc123", "qop": "auth", "opaque": "xyz"}
+        auth = hikvision._digest_authorization("admin", "pass123", "GET", "/ISAPI/System/deviceInfo", params)
+        self.assertTrue(auth.startswith("Digest "))
+        self.assertIn("username=\"admin\"", auth)
+        self.assertIn("response=\"", auth)
+
+    def test_goto_camera_simulation(self):
+        from expo import hikvision
+
+        cam = Camera.objects.create(name="Sim Kamera", zone="Kirish (Entrance)", mode=Camera.Mode.SIMULATION)
+        result = hikvision.goto_camera(cam)
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["mode"], "simulation")
+
+    def test_snapshot_simulation_returns_none(self):
+        from expo import hikvision
+
+        cam = Camera.objects.create(name="Sim Kamera 2", zone="Hall A", mode=Camera.Mode.SIMULATION)
+        self.assertIsNone(hikvision.capture_snapshot(cam))
+
+    def test_stream_url(self):
+        from expo import hikvision
+
+        cam = Camera.objects.create(
+            name="Live Kamera", zone="Hall B", mode=Camera.Mode.LIVE,
+            ip_address="192.168.1.10", username="admin", password="pass",
+            channel=2, substream=1,
+        )
+        url = hikvision.stream_url(cam)
+        self.assertTrue(url.startswith("rtsp://admin:pass@192.168.1.10:554/Streaming/Channels/"))
+
+    def test_snapshot_view_requires_monitor(self):
+        Camera.objects.create(name="K1", zone="Kirish (Entrance)")
+        # Anonim — redirect
+        self.assertEqual(self.client.get("/expo/devices/camera/1/snapshot/").status_code, 302)
