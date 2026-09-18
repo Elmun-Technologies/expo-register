@@ -1,5 +1,6 @@
 {% extends "dashboard/base_dashboard.html" %}
 {% load static %}
+{% load humanize %}
 
 {% block title %}
 My Events
@@ -480,7 +481,7 @@ EVENT TABLE
 
     <td>
 
-        ₹{{ event.price }}
+        {{ event.price|floatformat:"0"|intcomma }} so'm
 
     </td>
 

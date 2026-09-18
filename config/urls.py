@@ -54,6 +54,11 @@ urlpatterns = [
     include("messaging.urls"),
 ),
 
+    path(
+        "expo/",
+        include("expo.urls"),
+    ),
+
 ]
 
 if settings.DEBUG:

@@ -1,0 +1,406 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+
+{% block title %}Darvoza — Kirish nazorati{% endblock %}
+
+{% block css %}
+<style>
+    .gate-wrap { max-width: 900px; }
+    .gate-status {
+        display: flex; align-items: center; gap: .5rem;
+        font-weight: 700; font-size: .95rem;
+    }
+    .gate-status .dot { width: 11px; height: 11px; border-radius: 50%; }
+    .gate-online .dot { background: #22c55e; box-shadow: 0 0 0 4px rgba(34,197,94,.18); }
+    .gate-offline .dot { background: #f59e0b; box-shadow: 0 0 0 4px rgba(245,158,11,.18); }
+    .scan-box {
+        border-radius: 1rem; overflow: hidden; position: relative;
+        background: #0b1220; border: 1px solid rgba(255,255,255,.08);
+        min-height: 260px; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; color: #94a3b8;
+    }
+    #qr-reader { width: 100%; }
+    #qr-reader video { border-radius: 1rem; width: 100%; }
+    .scan-frame {
+        position: absolute; inset: 18px; pointer-events: none;
+        border: 2px solid rgba(99,102,241,.7); border-radius: 1rem;
+    }
+    .scan-frame::after {
+        content: ""; position: absolute; left: 0; right: 0; height: 3px;
+        background: linear-gradient(90deg, transparent, #6366f1, transparent);
+        top: -3px; animation: gscan 2.2s linear infinite;
+    }
+    @keyframes gscan { 0%{transform:translateY(0);} 100%{transform:translateY(228px);} }
+    .result-ok { background: #166534; color: #fff; }
+    .result-already { background: #92400e; color: #fff; }
+    .result-error { background: #991b1b; color: #fff; }
+    .queue-chip {
+        background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;
+        border-radius: 999px; padding: .2rem .8rem; font-weight: 700; font-size: .8rem;
+    }
+</style>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="gate-wrap mx-auto">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <div>
+            <h4 class="fw-bold mb-0"><i class="bi bi-qr-code-scan me-2"></i>Darvoza — kirish nazorati</h4>
+            <div class="text-muted small">QR skanerlash yoki joyida ro'yxat — internet uzilganda ham ishlaydi</div>
+        </div>
+        <div>
+            <span class="gate-status me-3" id="netStatus">
+                <span class="dot"></span><span id="netLabel">Tekshirilmoqda…</span>
+            </span>
+            <span class="queue-chip" id="queueBadge" style="display:none"></span>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- QR SKANER -->
+        <div class="col-lg-7">
+            <div class="dashboard-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0 fw-bold">QR skaner</h6>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-secondary" id="btnStartScan">
+                                <i class="bi bi-play-fill"></i> Boshlash
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" id="btnStopScan">
+                                <i class="bi bi-stop-fill"></i> To'xtatish
+                            </button>
+                        </div>
+                    </div>
+                    <div class="scan-box">
+                        <div class="scan-frame"></div>
+                        <div id="qr-reader"></div>
+                        <div id="qrPlaceholder" class="text-center p-4">
+                            <i class="bi bi-camera-video-off fs-1 d-block mb-2"></i>
+                            Kamerani boshlash uchun “Boshlash” bosing
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WALK-IN FORMA -->
+        <div class="col-lg-5">
+            <div class="dashboard-card">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">Joyida ro'yxat (QR bo'lmasa)</h6>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label small mb-1">Ism *</label>
+                            <input class="form-control" id="gFirstName" placeholder="Ism">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small mb-1">Familiya *</label>
+                            <input class="form-control" id="gLastName" placeholder="Familiya">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small mb-1">Kompaniya</label>
+                            <input class="form-control" id="gCompany" placeholder="Kompaniya (ixtiyoriy)">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small mb-1">Telefon</label>
+                            <input class="form-control" id="gPhone" placeholder="+998 …">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small mb-1">Turi</label>
+                            <select class="form-select" id="gVisitType">
+                                <option value="VISITOR">Mehmon</option>
+                                <option value="EXHIBITOR">Eksponent</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small mb-1">Tashrif maqsadi</label>
+                            <select class="form-select" id="gPurpose">
+                                <option value="BUSINESS">Biznes</option>
+                                <option value="PARTNERSHIP">Hamkorlik</option>
+                                <option value="INVESTOR">Investor</option>
+                                <option value="MEDIA">Matbuot / Media</option>
+                                <option value="STUDENT">Talaba</option>
+                                <option value="OTHER">Boshqa</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary w-100 mt-3" id="btnCheckIn">
+                        <i class="bi bi-person-plus-fill me-1"></i> Kiritish
+                    </button>
+                </div>
+            </div>
+
+            <!-- NATIJA -->
+            <div class="d-none mt-3" id="resultBox"></div>
+
+            <!-- OFFLINE NAVBAT -->
+            <div class="dashboard-card mt-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0 fw-bold">Offline navbat</h6>
+                        <button class="btn btn-sm btn-outline-primary" id="btnSync">
+                            <i class="bi bi-cloud-arrow-up"></i> Sinxronlash
+                        </button>
+                    </div>
+                    <div class="text-muted small" id="queueInfo">
+                        Saqlangan yozuvlar yo'q
+                    </div>
+                    <ul class="list-group list-group-flush mt-2" id="queueList"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+{{ block.super }}
+<script src="{% static 'expo/js/html5-qrcode.min.js' %}"></script>
+<script>
+const GATE_API = "{% url 'expo_gate_api' %}";
+const CSRF_TOKEN = "{{ csrf_token }}";
+const OFFLINE_KEY = "expo_gate_offline_queue";
+
+function getCsrf() {
+    return CSRF_TOKEN;
+}
+
+let html5Scanner = null;
+
+function isOnline() { return navigator.onLine !== false; }
+
+function setNetStatus(online) {
+    const box = document.getElementById("netStatus");
+    const label = document.getElementById("netLabel");
+    box.classList.toggle("gate-online", online);
+    box.classList.toggle("gate-offline", !online);
+    label.textContent = online ? "Onlayn — serverga ulanmoqda" : "Offline — navbatda saqlanadi";
+    renderQueue();
+}
+
+/* ---------- Offline navbat ---------- */
+function readQueue() {
+    try {
+        return JSON.parse(localStorage.getItem(OFFLINE_KEY) || "[]");
+    } catch (e) { return []; }
+}
+function writeQueue(items) {
+    localStorage.setItem(OFFLINE_KEY, JSON.stringify(items));
+}
+function renderQueue() {
+    const items = readQueue();
+    const badge = document.getElementById("queueBadge");
+    const info = document.getElementById("queueInfo");
+    const list = document.getElementById("queueList");
+    badge.style.display = items.length ? "inline-block" : "none";
+    badge.textContent = "⏳ Navbat: " + items.length;
+    info.textContent = items.length
+        ? items.length + " ta yozuv kutmoqda (internet qaytganda sinxronlanadi)"
+        : "Saqlangan yozuvlar yo'q";
+    list.innerHTML = "";
+    items.forEach((it, i) => {
+        const li = document.createElement("li");
+        li.className = "list-group-item d-flex justify-content-between align-items-center";
+        li.innerHTML = `<span>${esc(it.first_name)} ${esc(it.last_name)}</span>
+            <button class="btn btn-sm btn-outline-danger" onclick="removeQueueItem(${i})">✕</button>`;
+        list.appendChild(li);
+    });
+}
+function esc(s) {
+    const d = document.createElement("div");
+    d.textContent = String(s || "");
+    return d.innerHTML;
+}
+function removeQueueItem(i) {
+    const items = readQueue();
+    items.splice(i, 1);
+    writeQueue(items);
+    renderQueue();
+}
+function makeOfflineId() {
+    if (crypto.randomUUID) return crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random()*16|0, v = c==='x'?r:(r&0x3|0x8);
+        return v.toString(16);
+    });
+}
+
+/* ---------- Natija ko'rsatish ---------- */
+function showResult(kind, html) {
+    const box = document.getElementById("resultBox");
+    box.className = "mt-3 p-3 rounded-3 " + kind;
+    box.innerHTML = html;
+    box.classList.remove("d-none");
+    setTimeout(() => box.classList.add("d-none"), 8000);
+}
+
+/* ---------- Asosiy kiritish ---------- */
+async function submitCheckin(payload) {
+    if (isOnline()) {
+        try {
+            const res = await fetch(GATE_API, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCsrf(),
+                },
+                body: JSON.stringify(payload),
+            });
+            if (!res.ok) {
+                // server 4xx/5xx → lekin offline bo'lsa navbatga
+                if (!isOnline()) return queueCheckin(payload);
+                const data = await res.json().catch(() => ({}));
+                showResult("result-error", `<b>Xato:</b> ${esc(data.message || res.status)}`);
+                return;
+            }
+            const data = await res.json();
+            handleScanResult(data);
+            return;
+        } catch (err) {
+            // Tarmoq xatosi → offline navbat
+            return queueCheckin(payload);
+        }
+    } else {
+        return queueCheckin(payload);
+    }
+}
+
+function queueCheckin(payload) {
+    const items = readQueue();
+    items.push(Object.assign({}, payload, { offline_id: makeOfflineId(), queued_at: Date.now() }));
+    writeQueue(items);
+    renderQueue();
+    showResult("result-already",
+        `<i class="bi bi-cloud-download me-1"></i><b>Offline</b> — yozuv navbatga olindi. ` +
+        `Internet qaytganda avtomatik sinxronlanadi.`);
+}
+
+function handleScanResult(data) {
+    if (!data || data.status === "error") {
+        showResult("result-error", `<b>Xato:</b> ${esc(data ? data.message : "noma'lum")}`);
+        return;
+    }
+    if (data.status === "already") {
+        showResult("result-already",
+            `<i class="bi bi-person-check-fill me-1"></i><b>${esc(data.full_name)}</b> — ${esc(data.message)}`);
+    } else {
+        showResult("result-ok",
+            `<i class="bi bi-check-circle-fill me-1"></i><b>${esc(data.full_name)}</b> kiritildi. ` +
+            `${esc(data.message)}`);
+    }
+    renderQueue();
+}
+
+/* ---------- QR skaner ---------- */
+function startScanner() {
+    if (!html5Scanner) {
+        html5Scanner = new Html5Qrcode("qr-reader");
+    }
+    document.getElementById("qrPlaceholder").style.display = "none";
+    html5Scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        (decodedText) => {
+            html5Scanner.pause(true);
+            if (isOnline()) {
+                submitCheckin({ qr_text: decodedText });
+            } else {
+                queueCheckin({ qr_text: decodedText, first_name: "", last_name: "" });
+            }
+            setTimeout(() => html5Scanner.resume(), 2500);
+        },
+        () => {}
+    ).catch(err => {
+        document.getElementById("qrPlaceholder").style.display = "block";
+        document.getElementById("qrPlaceholder").innerHTML =
+            `<i class="bi bi-camera-video-off fs-1 d-block mb-2"></i>` +
+            `Kamerani ishga tushirib bo'lmadi: ${esc(err)}`;
+    });
+}
+function stopScanner() {
+    if (html5Scanner) {
+        html5Scanner.stop().then(() => {
+            html5Scanner.clear();
+            document.getElementById("qrPlaceholder").style.display = "block";
+        }).catch(() => {});
+    }
+}
+
+/* ---------- Offline sinxronlash ---------- */
+async function syncQueue() {
+    const items = readQueue();
+    if (!items.length) {
+        showResult("result-already", "Navbat bo'sh — sinxronlanadigan yozuv yo'q");
+        return;
+    }
+    if (!isOnline()) {
+        showResult("result-error", "Internet yo'q — yozuvlar hali ham navbatda");
+        return;
+    }
+    try {
+        const res = await fetch(GATE_API, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-CSRFToken": getCsrf() },
+            body: JSON.stringify(items),
+        });
+        const data = await res.json();
+        if (data && data.success && Array.isArray(data.results)) {
+            // server muvaffaqiyatli qaytargan yozuvlarni navbatdan olib tashlash
+            const synced = new Set(
+                data.results.filter(r => r.status === "ok" || r.status === "already")
+                    .map(r => r.offline_id)
+            );
+            const remaining = items.filter(it => !synced.has(it.offline_id));
+            writeQueue(remaining);
+            renderQueue();
+            const okCount = data.results.filter(r => r.status === "ok").length;
+            const dupCount = data.results.filter(r => r.status === "already").length;
+            showResult("result-ok",
+                `<i class="bi bi-cloud-check-fill me-1"></i><b>Sinxronlandi:</b> ` +
+                `${okCount} kiritildi, ${dupCount} takror, ${remaining.length} hali navbatda`);
+        } else {
+            showResult("result-error", "Sinxronlash natijasi noto'g'ri qaytdi");
+        }
+    } catch (err) {
+        showResult("result-error", "Sinxronlash xatosi — keyinroq urining");
+    }
+}
+
+/* ---------- Walk-in tugma ---------- */
+document.getElementById("btnCheckIn").addEventListener("click", () => {
+    const payload = {
+        first_name: document.getElementById("gFirstName").value.trim(),
+        last_name: document.getElementById("gLastName").value.trim(),
+        company: document.getElementById("gCompany").value.trim(),
+        phone: document.getElementById("gPhone").value.trim(),
+        purpose: document.getElementById("gPurpose").value,
+        visit_type: document.getElementById("gVisitType").value,
+    };
+    if (!payload.first_name || !payload.last_name) {
+        showResult("result-error", "Ism va familiya kiritilishi shart");
+        return;
+    }
+    submitCheckin(payload);
+    document.getElementById("gFirstName").value = "";
+    document.getElementById("gLastName").value = "";
+    document.getElementById("gCompany").value = "";
+    document.getElementById("gPhone").value = "";
+});
+
+document.getElementById("btnStartScan").addEventListener("click", startScanner);
+document.getElementById("btnStopScan").addEventListener("click", stopScanner);
+document.getElementById("btnSync").addEventListener("click", syncQueue);
+
+window.addEventListener("online", () => { setNetStatus(true); });
+window.addEventListener("offline", () => { setNetStatus(false); });
+
+setNetStatus(isOnline());
+renderQueue();
+
+/* ---------- Service Worker (offline kesh) ---------- */
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("{% url 'expo_gate_sw' %}").catch(() => {});
+}
+</script>
+{% endblock %}

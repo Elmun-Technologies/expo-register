@@ -20,11 +20,11 @@
     <div>
 
         <h4>
-            Eventify
+            Expo Register
         </h4>
 
         <small>
-            Smart Event Platform
+            Smart Expo Platform
         </small>
 
     </div>
@@ -223,6 +223,95 @@
 
 
 
+<!-- ==========================
+     EXPO CONTROL
+========================== -->
+
+<div class="menu-title">
+    EXPO CONTROL
+</div>
+
+
+
+<a href="{% url 'expo_monitor' %}"
+   class="{% if request.resolver_match.url_name == 'expo_monitor' %}active{% endif %}">
+
+    <i class="bi bi-camera-video"></i>
+
+    <span>
+        Monitoring
+    </span>
+
+</a>
+
+
+
+<a href="{% url 'expo_visitors' %}"
+   class="{% if request.resolver_match.url_name == 'expo_visitors' %}active{% endif %}">
+
+    <i class="bi bi-people-fill"></i>
+
+    <span>
+        Mehmonlar
+    </span>
+
+</a>
+
+
+
+<a href="{% url 'expo_analytics' %}"
+   class="{% if request.resolver_match.url_name == 'expo_analytics' %}active{% endif %}">
+
+    <i class="bi bi-graph-up-arrow"></i>
+
+    <span>
+        Stend analitikasi
+    </span>
+
+</a>
+
+
+
+<a href="{% url 'expo_devices' %}"
+   class="{% if request.resolver_match.url_name == 'expo_devices' %}active{% endif %}">
+
+    <i class="bi bi-gear-fill"></i>
+
+    <span>
+        Qurilmalar
+    </span>
+
+</a>
+
+
+
+<a href="{% url 'expo_kiosk' %}"
+   target="_blank">
+
+    <i class="bi bi-upc-scan"></i>
+
+    <span>
+        Kiosk
+    </span>
+
+</a>
+
+
+
+<a href="{% url 'expo_gate' %}"
+   target="_blank"
+   class="{% if request.resolver_match.url_name == 'expo_gate' %}active{% endif %}">
+
+    <i class="bi bi-qr-code-scan"></i>
+
+    <span>
+        Darvoza (QR skaner)
+    </span>
+
+</a>
+
+
+
 {% endif %}
 
 
@@ -236,6 +325,59 @@
 <!-- ==========================
      ORGANIZER
 ========================== -->
+
+
+{% if dashboard_type == "security" %}
+
+
+
+<div class="menu-title">
+    EXPO CONTROL
+</div>
+
+
+
+<a href="{% url 'expo_monitor' %}"
+   class="{% if request.resolver_match.url_name == 'expo_monitor' %}active{% endif %}">
+
+    <i class="bi bi-camera-video"></i>
+
+    <span>
+        Monitoring
+    </span>
+
+</a>
+
+
+
+<a href="{% url 'expo_visitors' %}"
+   class="{% if request.resolver_match.url_name == 'expo_visitors' %}active{% endif %}">
+
+    <i class="bi bi-people-fill"></i>
+
+    <span>
+        Mehmonlar
+    </span>
+
+</a>
+
+
+
+<a href="{% url 'expo_kiosk' %}"
+   target="_blank">
+
+    <i class="bi bi-upc-scan"></i>
+
+    <span>
+        Kiosk
+    </span>
+
+</a>
+
+
+
+{% endif %}
+
 
 
 {% if dashboard_type == "organizer" %}
@@ -279,6 +421,19 @@
         Create Event
     </span>
 
+
+</a>
+
+
+
+<a href="{% url 'expo_analytics' %}"
+   class="{% if request.resolver_match.url_name == 'expo_analytics' %}active{% endif %}">
+
+    <i class="bi bi-graph-up-arrow"></i>
+
+    <span>
+        Stend statistikasi
+    </span>
 
 </a>
 

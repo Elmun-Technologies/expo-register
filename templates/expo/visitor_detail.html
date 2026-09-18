@@ -1,0 +1,72 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ visitor.full_name }} — Kuzatuv{% endblock %}
+
+{% block dashboard_content %}
+
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap mb-4">
+    <div>
+        <h2 class="fw-bold">{{ visitor.full_name }}</h2>
+        <p class="text-muted mb-0">
+            {% if visitor.company %}{{ visitor.company }} · {% endif %}{{ visitor.get_purpose_display }}
+        </p>
+    </div>
+    <div>
+        {% if visitor.is_active %}
+            <span class="badge text-bg-success fs-6"><i class="bi bi-person-check me-1"></i>Ichkarida · {{ visitor.minutes_inside }} daqiqa</span>
+        {% else %}
+            <span class="badge text-bg-secondary fs-6"><i class="bi bi-person-x me-1"></i>Chiqib ketdi</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="dashboard-card">
+            <div class="card-header"><i class="bi bi-info-circle me-2"></i>Ma'lumot</div>
+            <div class="card-body">
+                {% if visitor.photo %}
+                <div class="text-center mb-3">
+                    <img src="{{ visitor.photo.url }}" alt="{{ visitor.full_name }}"
+                         style="width:140px;height:140px;object-fit:cover;border-radius:1rem;border:1px solid #e2e8f0;">
+                </div>
+                {% endif %}
+                <table class="table table-sm mb-0">
+                    <tr><th class="text-muted">Ism</th><td>{{ visitor.first_name }}</td></tr>
+                    <tr><th class="text-muted">Familiya</th><td>{{ visitor.last_name }}</td></tr>
+                    <tr><th class="text-muted">Kompaniya</th><td>{{ visitor.company|default:"—" }}</td></tr>
+                    <tr><th class="text-muted">Maqsad</th><td>{{ visitor.get_purpose_display }}</td></tr>
+                    <tr><th class="text-muted">Telefon</th><td>{{ visitor.phone|default:"—" }}</td></tr>
+                    <tr><th class="text-muted">Kirish</th><td>{{ visitor.check_in_at|date:"d.m.Y H:i" }}</td></tr>
+                    <tr><th class="text-muted">Chiqish</th><td>{{ visitor.check_out_at|date:"d.m.Y H:i"|default:"—" }}</td></tr>
+                    <tr><th class="text-muted">Joriy zona</th><td>{{ visitor.current_zone|default:"Kirish" }}</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="dashboard-card">
+            <div class="card-header"><i class="bi bi-signpost-split me-2"></i>Kuzatuv yo'li</div>
+            <div class="card-body">
+                {% if events %}
+                <div class="timeline">
+                    {% for e in events %}
+                    <div class="track-item mb-2" style="border-left:3px solid {% if e.kind == 'LEFT' %}#f59e0b{% else %}#6366f1{% endif %}; padding:.5rem .75rem; background:#f8fafc; border-radius:.4rem;">
+                        <div class="d-flex justify-content-between">
+                            <strong><i class="bi bi-geo-alt-fill me-1"></i>{{ e.zone }}</strong>
+                            <span class="text-muted small">{{ e.detected_at|date:"H:i" }}</span>
+                        </div>
+                        <span class="badge text-bg-light">{{ e.get_kind_display }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">Kuzatuv hodisalari hali yo'q.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

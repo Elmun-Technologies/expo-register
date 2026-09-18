@@ -552,7 +552,7 @@ def verify_qr_checkin(request, slug):
                 timezone.localtime(
                     checked_time
                 ).strftime(
-                    "%d %b %Y, %I:%M %p"
+                    "%d.%m.%Y %H:%M"
                 )
                 if checked_time
                 else "an earlier time"
@@ -641,7 +641,7 @@ def verify_qr_checkin(request, slug):
         timezone.localtime(
             registration.checked_in_at
         ).strftime(
-            "%d %b %Y, %I:%M %p"
+            "%d.%m.%Y %H:%M"
         )
     )
 
@@ -798,7 +798,7 @@ def verify_qr_checkin(request, slug):
             timezone.localtime(
                 checked_time
             ).strftime(
-                "%d %b %Y, %I:%M %p"
+                "%d.%m.%Y %H:%M"
             )
             if checked_time
             else "an earlier time"
@@ -884,7 +884,7 @@ def verify_qr_checkin(request, slug):
     checked_in_time = timezone.localtime(
         registration.checked_in_at
     ).strftime(
-        "%d %b %Y, %I:%M %p"
+        "%d.%m.%Y %H:%M"
     )
 
     return JsonResponse(

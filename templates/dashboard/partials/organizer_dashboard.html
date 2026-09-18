@@ -1,4 +1,5 @@
 {% load static %}
+{% load humanize %}
 
 <link rel="stylesheet"
       href="{% static 'css/dashboard.css' %}">
@@ -239,7 +240,7 @@ STATISTICS
 
                     <div class="stats-number">
 
-                        ₹{{ total_revenue|default:0 }}
+                        {{ total_revenue|floatformat:"0"|intcomma }} so'm
 
                     </div>
 
@@ -253,7 +254,7 @@ STATISTICS
 
                 <div class="stats-icon stats-danger">
 
-                    <i class="bi bi-currency-rupee"></i>
+                    <i class="bi bi-cash-coin"></i>
 
                 </div>
 
@@ -429,7 +430,7 @@ ANALYTICS
 
                         <h6 class="fw-bold text-success">
 
-                            ₹{{ total_revenue|default:0 }}
+                            {{ total_revenue|floatformat:"0"|intcomma }} so'm
 
                         </h6>
 
@@ -1226,7 +1227,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const original = counter.innerText.trim();
 
-        const currency = original.includes("₹");
+        const currency = original.includes("so'm") || original.includes("₹");
 
         const target = parseInt(original.replace(/[^\d]/g,"")) || 0;
 
@@ -1249,7 +1250,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             counter.innerText = currency
-                ? "₹" + current.toLocaleString()
+                ? current.toLocaleString() + " so'm"
                 : current.toLocaleString();
 
             if(current < target){

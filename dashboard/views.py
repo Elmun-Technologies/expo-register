@@ -1,7 +1,7 @@
 from multiprocessing import context
 from urllib import request
 
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.db.models import Count
@@ -14,6 +14,8 @@ import json
 from events.models import Event
 from accounts.models import User
 from registrations.models import Registration
+from expo.models import Booth, Camera, ExpoVisitor, TrackingEvent
+from expo import analytics as expo_analytics
 
 
 
@@ -64,6 +66,10 @@ def is_attendee(user):
 def dashboard_home(request):
 
     user = request.user
+
+    # Security staff go straight to the live monitoring screen
+    if user.role == User.Role.SECURITY:
+        return redirect("expo_monitor")
 
     # Django superuser or admin role
     if user.is_superuser or user.role == User.Role.ADMIN:
@@ -318,6 +324,29 @@ def get_admin_dashboard_context():
 
         "registration_chart_data":
             json.dumps(registration_chart_data),
+
+
+        # =====================================================
+        # EXPO MONITORING
+        # =====================================================
+
+        "expo_overview":
+            expo_analytics.expo_overview(),
+
+        "expo_active_visitors":
+            ExpoVisitor.objects.filter(status=ExpoVisitor.Status.ACTIVE).count(),
+
+        "expo_total_visitors":
+            ExpoVisitor.objects.count(),
+
+        "expo_booths":
+            Booth.objects.count(),
+
+        "expo_cameras_online":
+            Camera.objects.filter(is_enabled=True, is_online=True).count(),
+
+        "expo_cameras_total":
+            Camera.objects.filter(is_enabled=True).count(),
 
 
     }

@@ -1,4 +1,5 @@
 {% extends "dashboard/base_dashboard.html" %}
+{% load humanize %}
 
 {% block title %}
 Reports Dashboard
@@ -260,7 +261,7 @@ KPI CARDS
 
             <div class="stat-icon bg-danger-gradient">
 
-                <i class="bi bi-currency-rupee"></i>
+                <i class="bi bi-cash-coin"></i>
 
             </div>
 
@@ -274,7 +275,7 @@ KPI CARDS
 
                 <h2>
 
-                    ₹{{ total_revenue }}
+                    {{ total_revenue|floatformat:"0"|intcomma }} so'm
 
                 </h2>
 
@@ -524,7 +525,7 @@ SUMMARY CHARTS
 
                 <h5 class="mb-0">
 
-                    <i class="bi bi-currency-rupee text-danger me-2"></i>
+                    <i class="bi bi-cash-coin text-danger me-2"></i>
 
                     Revenue Overview
 
@@ -538,7 +539,7 @@ SUMMARY CHARTS
 
                     <div class="display-3 text-success mb-3">
 
-                        ₹{{ total_revenue }}
+                        {{ total_revenue|floatformat:"0"|intcomma }} so'm
 
                     </div>
 
@@ -656,7 +657,7 @@ SYSTEM INSIGHTS
 
                     <h5>
 
-                        ₹{{ total_revenue }}
+                        {{ total_revenue|floatformat:"0"|intcomma }} so'm
 
                     </h5>
 
@@ -1232,13 +1233,13 @@ REGISTRATION OVERVIEW
 
                 <div class="display-5 text-warning mb-3">
 
-                    <i class="bi bi-currency-rupee"></i>
+                    <i class="bi bi-cash-coin"></i>
 
                 </div>
 
                 <h3>
 
-                    ₹{{ total_revenue }}
+                    {{ total_revenue|floatformat:"0"|intcomma }} so'm
 
                 </h3>
 
@@ -1514,7 +1515,7 @@ REPORT SUMMARY
 
                 <h3 class="mt-2">
 
-                    ₹{{ total_revenue }}
+                    {{ total_revenue|floatformat:"0"|intcomma }} so'm
 
                 </h3>
 

@@ -4,6 +4,8 @@ def dashboard_context(request):
 
     if request.user.is_superuser or request.user.role == "ADMIN":
         dashboard_type = "admin"
+    elif request.user.role == "SECURITY":
+        dashboard_type = "security"
     elif request.user.role == "ORGANIZER":
         dashboard_type = "organizer"
     else:

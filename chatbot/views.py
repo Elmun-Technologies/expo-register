@@ -21,6 +21,29 @@ from .services import (
 # LOCAL FALLBACK
 # ==========================================================
 
+def _gate_qr_data_uri(registration):
+    """
+    Darvoza uchun QR kartasi (data URI PNG).
+
+    QR ichiga Ticket ID (UUID) yoziladi — manager skaneri shu orqali
+    mijozni topib, ExpoVisitor yaratadi va kuzatuvni boshlaydi.
+    """
+    import base64
+    import io
+
+    import qrcode
+
+    payload = (
+        f"Ticket ID:\n{registration.ticket_code}\n\n"
+        f"Attendee:\n{registration.attendee.username}\n\n"
+        f"Event:\n{registration.event.title}\n"
+    )
+    qr = qrcode.make(payload, box_size=8, border=2)
+    buf = io.BytesIO()
+    qr.save(buf, format="PNG")
+    return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
+
+
 def local_fallback_response(message, user):
     """
     Local chatbot fallback used when Gemini is unavailable,
@@ -270,9 +293,13 @@ def chatbot_response(
     links=None,
     success=True,
     status=200,
+    image=None,
 ):
     """
     Keep all chatbot JSON responses consistent.
+
+    ``image`` — ixtiyoriy data-URI (masalan, avtogeneratsiya qilingan
+    QR kartochka) — chatbot widgetida rasm sifatida ko'rsatiladi.
     """
 
     return JsonResponse(
@@ -280,6 +307,7 @@ def chatbot_response(
             "success": success,
             "reply": reply,
             "links": links or [],
+            "image": image,
         },
         status=status,
     )
@@ -506,6 +534,10 @@ def chat_api(request):
                         },
                     )
 
+                # Avtogeneratsiya: darvoza QR kartasi (data URI).
+                # Manager shu QR ni skanerlab mijozni ichkariga kiritadi.
+                qr_image = _gate_qr_data_uri(ticket)
+
                 return chatbot_response(
                     (
                         f"Your ticket for "
@@ -514,9 +546,11 @@ def chat_api(request):
                         f"Ticket ID: "
                         f"{ticket.ticket_id()}\n"
                         f"Status: "
-                        f"{ticket.get_status_display()}"
+                        f"{ticket.get_status_display()}\n\n"
+                        f"Show this QR at the entrance gate."
                     ),
                     links,
+                    image=qr_image,
                 )
 
             # ----------------------------------------------

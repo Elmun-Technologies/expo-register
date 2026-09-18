@@ -18,6 +18,10 @@ Dashboard
 
     {% include "dashboard/partials/attendee_dashboard.html" %}
 
+{% elif dashboard_type == "security" %}
+
+    {% include "dashboard/partials/attendee_dashboard.html" %}
+
 {% else %}
 
 <div class="alert alert-danger">

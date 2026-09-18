@@ -1,0 +1,3 @@
+html5-qrcode v2.3.x (minified build)
+Licensed under Apache License 2.0
+https://github.com/mebjas/html5-qrcode

@@ -1,0 +1,277 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="{{ lang|default:'uz' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if lang == "ru" %}Регистрация Expo{% else %}Expo — Ro'yxatdan o'tish{% endif %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background: transparent; }
+        .kiosk-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 45%, #312e81 100%);
+            padding: 2rem 0;
+            position: relative;
+        }
+        .kiosk-card {
+            width: 100%;
+            max-width: 520px;
+            border-radius: 1.5rem;
+            border: 1px solid rgba(255,255,255,.12);
+            background: rgba(255,255,255,.06);
+            backdrop-filter: blur(14px);
+            color: #fff;
+            box-shadow: 0 25px 60px rgba(0,0,0,.45);
+        }
+        .kiosk-card .form-control,
+        .kiosk-card .form-select {
+            background: rgba(255,255,255,.1);
+            border: 1px solid rgba(255,255,255,.18);
+            color: #fff;
+        }
+        .kiosk-card .form-control::placeholder { color: rgba(255,255,255,.5); }
+        .kiosk-card .form-select option { color: #111; }
+        .kiosk-logo {
+            width: 74px; height: 74px;
+            border-radius: 1.2rem;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; color: #fff;
+            margin: 0 auto;
+        }
+        .kiosk-success { text-align: center; padding: 1.5rem 0; }
+        .kiosk-success .ring {
+            width: 84px; height: 84px;
+            border-radius: 50%;
+            background: rgba(34,197,94,.18);
+            border: 2px solid #22c55e;
+            display: flex; align-items:center; justify-content:center;
+            font-size: 2.4rem; color:#22c55e; margin: 0 auto 1rem;
+        }
+        .lang-switch { position: absolute; top: 1.25rem; right: 1.5rem; z-index: 5; }
+        .brand-top {
+            position: absolute; top: 1.25rem; left: 1.5rem; z-index: 5;
+            color: rgba(255,255,255,.85); font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+<div class="kiosk-page position-relative">
+    <div class="brand-top">
+        <i class="bi bi-broadcast-pin me-2"></i>Expo Control
+    </div>
+    <div class="lang-switch">
+        <a href="?lang=uz" class="btn btn-sm {% if lang == 'uz' %}btn-light{% else %}btn-outline-light{% endif %}">O'zbekcha</a>
+        <a href="?lang=ru" class="btn btn-sm {% if lang == 'ru' %}btn-light{% else %}btn-outline-light{% endif %}">Русский</a>
+    </div>
+
+    <div class="kiosk-card p-4 p-md-5">
+
+        {% if duplicate %}
+            <div class="kiosk-success">
+                <div class="ring" style="border-color:#f59e0b;color:#f59e0b;background:rgba(245,158,11,.15);"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                <h3 class="fw-bold mb-2">
+                    {% if lang == "ru" %}Уже зарегистрирован!{% else %}Allaqachon ro'yxatdan o'tgan!{% endif %}
+                </h3>
+                <p class="mb-1 fs-5">{{ duplicate.full_name }}</p>
+                {% if duplicate.company %}<p class="text-white-50 mb-2">{{ duplicate.company }}</p>{% endif %}
+                <div class="alert alert-warning bg-warning bg-opacity-25 border-warning text-white">
+                    <i class="bi bi-person-check me-2"></i>
+                    {% if lang == "ru" %}
+                        Этот посетитель уже зарегистрирован
+                    {% else %}
+                        Bu mehmon allaqachon ro'yxatdan o'tgan
+                    {% endif %}
+                    {% if duplicate_reason == "face" %}
+                        <span class="badge bg-warning text-dark ms-1">{% if lang == "ru" %}по лицу{% else %}yuz bo'yicha{% endif %}</span>
+                    {% endif %}
+                </div>
+                <a href="{% url 'expo_kiosk' %}?lang={{ lang }}" class="btn btn-light btn-lg mt-2">
+                    {% if lang == "ru" %}Следующий посетитель{% else %}Keyingi mehmon{% endif %}
+                </a>
+            </div>
+        {% elif created_visitor %}
+            <div class="kiosk-success">
+                <div class="ring"><i class="bi bi-camera-video-fill"></i></div>
+                <h3 class="fw-bold mb-2">
+                    {% if lang == "ru" %}Регистрация прошла успешно!{% else %}Ro'yxatga olindi!{% endif %}
+                </h3>
+                <p class="mb-1 fs-5">{{ created_visitor.full_name }}</p>
+                {% if created_visitor.company %}
+                    <p class="text-white-50 mb-2">{{ created_visitor.company }}</p>
+                {% endif %}
+                <div class="alert alert-success bg-success bg-opacity-25 border-success text-white">
+                    <i class="bi bi-broadcast me-2"></i>
+                    {% if lang == "ru" %}
+                        Система начала слежение за посетителем
+                    {% else %}
+                        Tizim mehmonni kuzatishni boshladi
+                    {% endif %}
+                </div>
+                <a href="{% url 'expo_kiosk' %}?lang={{ lang }}" class="btn btn-light btn-lg mt-2">
+                    {% if lang == "ru" %}Следующий посетитель{% else %}Keyingi mehmon{% endif %}
+                </a>
+            </div>
+        {% else %}
+            <div class="kiosk-logo mb-3"><i class="bi bi-person-check-fill"></i></div>
+            <h4 class="text-center fw-bold mb-1">
+                {% if lang == "ru" %}Регистрация посетителя{% else %}Mehmonni ro'yxatdan o'tkazish{% endif %}
+            </h4>
+            <p class="text-center text-white-50 mb-4">
+                {% if lang == "ru" %}
+                    Введите имя и фамилию — система сразу начнёт контроль
+                {% else %}
+                    Ism va familiyani kiriting — tizim darhol nazoratni boshlaydi
+                {% endif %}
+            </p>
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+                {{ form.photo_data }}
+
+                <!-- Veb-kamera (ixtiyoriy) -->
+                <div class="mb-3 text-center">
+                    <div class="photo-box mx-auto mb-2" id="photoBox" style="width:150px;height:150px;border-radius:1rem;border:1px dashed rgba(255,255,255,.35);background:rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                        <div id="photoPlaceholder" class="text-white-50">
+                            <i class="bi bi-camera" style="font-size:2rem;"></i>
+                            <div class="small">{% if lang == "ru" %}Фото{% else %}Surat{% endif %}</div>
+                        </div>
+                        <video id="camVideo" autoplay playsinline muted style="display:none;width:100%;height:100%;object-fit:cover;"></video>
+                        <img id="photoPreview" style="display:none;width:100%;height:100%;object-fit:cover;" alt="">
+                    </div>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="button" id="camToggle" class="btn btn-sm btn-outline-light">
+                            <i class="bi bi-camera-video me-1"></i>{% if lang == "ru" %}Камера{% else %}Kamera{% endif %}
+                        </button>
+                        <button type="button" id="camCapture" class="btn btn-sm btn-light" disabled>
+                            <i class="bi bi-camera me-1"></i>{% if lang == "ru" %}Снять{% else %}Rasmga olish{% endif %}
+                        </button>
+                        <button type="button" id="camReset" class="btn btn-sm btn-outline-light d-none">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-white-50 small">{% if lang == "ru" %}Имя *{% else %}Ism *{% endif %}</label>
+                    {{ form.first_name }}
+                    {% for e in form.first_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-white-50 small">{% if lang == "ru" %}Фамилия *{% else %}Familiya *{% endif %}</label>
+                    {{ form.last_name }}
+                    {% for e in form.last_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-white-50 small">{% if lang == "ru" %}Компания{% else %}Kompaniya{% endif %}</label>
+                    {{ form.company }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-white-50 small">{% if lang == "ru" %}Цель визита{% else %}Tashrif maqsadi{% endif %}</label>
+                    {{ form.purpose }}
+                </div>
+                <div class="mb-4">
+                    <label class="form-label text-white-50 small">{% if lang == "ru" %}Телефон{% else %}Telefon{% endif %}</label>
+                    {{ form.phone }}
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-100 fw-semibold">
+                    <i class="bi bi-person-plus-fill me-2"></i>
+                    {% if lang == "ru" %}Зарегистрировать{% else %}Ro'yxatdan o'tkazish{% endif %}
+                </button>
+            </form>
+        {% endif %}
+
+    </div>
+</div>
+
+<script>
+(function () {
+    var video = document.getElementById('camVideo');
+    var preview = document.getElementById('photoPreview');
+    var placeholder = document.getElementById('photoPlaceholder');
+    var toggleBtn = document.getElementById('camToggle');
+    var captureBtn = document.getElementById('camCapture');
+    var resetBtn = document.getElementById('camReset');
+    var dataInput = document.querySelector('[name="photo_data"]');
+    var stream = null;
+
+    function stopStream() {
+        if (stream) {
+            stream.getTracks().forEach(function (t) { t.stop(); });
+            stream = null;
+        }
+    }
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function () {
+            if (stream) {
+                stopStream();
+                video.style.display = 'none';
+                video.srcObject = null;
+                captureBtn.disabled = true;
+                if (!preview.src) placeholder.style.display = '';
+                toggleBtn.innerHTML = '<i class="bi bi-camera-video me-1"></i>' + (video.dataset.lang === 'ru' ? 'Камера' : 'Kamera');
+                return;
+            }
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert('Kamera qo\'llab-quvvatlanmaydi');
+                return;
+            }
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function (s) {
+                    stream = s;
+                    video.srcObject = s;
+                    video.style.display = '';
+                    placeholder.style.display = 'none';
+                    preview.style.display = 'none';
+                    preview.src = '';
+                    captureBtn.disabled = false;
+                    dataInput.value = '';
+                    resetBtn.classList.add('d-none');
+                })
+                .catch(function () {
+                    alert('Kameraga ruxsat berilmadi');
+                });
+        });
+    }
+
+    if (captureBtn) {
+        captureBtn.addEventListener('click', function () {
+            var canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            dataInput.value = dataUrl;
+            preview.src = dataUrl;
+            preview.style.display = '';
+            video.style.display = 'none';
+            placeholder.style.display = 'none';
+            captureBtn.disabled = true;
+            resetBtn.classList.remove('d-none');
+            stopStream();
+        });
+    }
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function () {
+            dataInput.value = '';
+            preview.src = '';
+            preview.style.display = 'none';
+            placeholder.style.display = '';
+            resetBtn.classList.add('d-none');
+            captureBtn.disabled = true;
+        });
+    }
+})();
+</script>
+
+</body>
+</html>

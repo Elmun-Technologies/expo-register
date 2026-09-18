@@ -1,0 +1,117 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Expo Qurilmalar{% endblock %}
+
+{% block dashboard_content %}
+
+<div class="page-header mb-4">
+    <h2 class="fw-bold"><i class="bi bi-gear-fill text-primary me-2"></i>Qurilmalar va stendlar</h2>
+    <p class="text-muted mb-0">Kameralar (Hikvision ISAPI/RTSP) va expo hududidagi stendlar</p>
+</div>
+
+<div class="row g-4">
+    <!-- Kameralar -->
+    <div class="col-lg-7">
+        <div class="dashboard-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-camera-video me-2"></i>Kameralar</span>
+                <span class="badge text-bg-light">{{ cameras|length }} ta</span>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead><tr>
+                            <th>Kamera</th><th>Hudud</th><th>Rejim</th><th>Holat</th><th>Manzil</th><th class="text-end">Boshqaruv</th>
+                        </tr></thead>
+                        <tbody>
+                        {% for c in cameras %}
+                            <tr>
+                                <td><strong>{{ c.name }}</strong></td>
+                                <td>{{ c.zone|default:"—" }}</td>
+                                <td>
+                                    {% if c.mode == "LIVE" %}
+                                        <span class="badge text-bg-primary">LIVE</span>
+                                    {% else %}
+                                        <span class="badge text-bg-warning">SIM</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if c.is_enabled and c.is_online %}<span class="badge text-bg-success">Onlayn</span>
+                                    {% elif c.is_enabled %}<span class="badge text-bg-warning">Ulanishda…</span>
+                                    {% else %}<span class="badge text-bg-secondary">O'chirilgan</span>{% endif %}
+                                </td>
+                                <td class="text-muted small">
+                                    {{ c.ip_address|default:"—" }}{% if c.port %}:{{ c.port }}{% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm {% if c.is_enabled %}btn-outline-danger{% else %}btn-outline-success{% endif %} cam-toggle"
+                                            data-id="{{ c.id }}">
+                                        <i class="bi {% if c.is_enabled %}bi-power{% else %}bi-power-fill{% endif %}"></i>
+                                        {% if c.is_enabled %}O'chirish{% else %}Yoqish{% endif %}
+                                    </button>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="6" class="text-center text-muted py-4">
+                                Kameralar qo'shilmagan. <a href="/admin/expo/camera/add/" target="_blank">Admin orqali qo'shing</a>.
+                            </td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stendlar -->
+    <div class="col-lg-5">
+        <div class="dashboard-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-shop me-2"></i>Stendlar</span>
+                <span class="badge text-bg-light">{{ booths|length }} ta</span>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead><tr><th>#</th><th>Stend</th><th>Hudud</th><th>Egasi</th></tr></thead>
+                        <tbody>
+                        {% for b in booths %}
+                            <tr>
+                                <td class="text-muted">{{ b.booth_number }}</td>
+                                <td><strong>{{ b.name }}</strong></td>
+                                <td>{{ b.zone|default:"—" }}</td>
+                                <td>{% if b.owner %}{{ b.owner.get_full_name|default:b.owner.username }}{% else %}—{% endif %}</td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="4" class="text-center text-muted py-4">
+                                Stendlar qo'shilmagan. <a href="/admin/expo/booth/add/" target="_blank">Admin orqali qo'shing</a>.
+                            </td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script>
+    document.querySelectorAll('.cam-toggle').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var id = btn.getAttribute('data-id');
+            btn.disabled = true;
+            fetch('/expo/devices/camera/' + id + '/toggle/')
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.ok) {
+                        location.reload();
+                    }
+                })
+                .catch(function () { btn.disabled = false; });
+        });
+    });
+</script>
+{% endblock %}

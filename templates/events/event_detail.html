@@ -1,5 +1,6 @@
 {% extends "dashboard/base_dashboard.html" %}
 {% load static %}
+{% load humanize %}
 
 {% block title %}
 {{ event.title }}
@@ -258,7 +259,7 @@ EVENT DETAILS + QUICK STATS
 
             <div class="card-body text-center">
 
-                <i class="bi bi-currency-rupee text-success display-6"></i>
+                <i class="bi bi-cash-coin text-success display-6"></i>
 
                 <h6 class="mt-2 text-muted">
 
@@ -268,7 +269,7 @@ EVENT DETAILS + QUICK STATS
 
                 <h3>
 
-                    ₹{{ event.price }}
+                    {{ event.price|floatformat:"0"|intcomma }} so'm
 
                 </h3>
 

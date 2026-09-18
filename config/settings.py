@@ -41,6 +41,19 @@ CSRF_TRUSTED_ORIGINS = [
     if origin.strip()
 ]
 
+if DEBUG:
+    # Arena sandbox live-preview proxy (https://{port}-{id}.e2b.app).
+    # Host `8000-abc123.e2b.app` — ikki darajali subdomain, shuning uchun
+    # bir darajali `*.e2b.app` bilan baravar ikki darajali `*.*.e2b.app`
+    # ham qo'shamiz.
+    ALLOWED_HOSTS += ["*"]
+    CSRF_TRUSTED_ORIGINS += [
+        "https://*.e2b.app",
+        "https://*.*.e2b.app",
+        "http://*.e2b.app",
+        "http://*.*.e2b.app",
+    ]
+
 
 # --------------------------------------------------
 # Applications
@@ -62,6 +75,7 @@ INSTALLED_APPS = [
     "feedback",
     "faq",
     "messaging",
+    "expo",
 
     # Django Apps
     "django.contrib.admin",
@@ -70,6 +84,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.humanize",
 ]
 
 
@@ -103,6 +118,7 @@ TEMPLATES = [
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.request",
+                "django.template.context_processors.csrf",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "notifications.context_processors.notification_context",
@@ -154,11 +170,34 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "Asia/Kolkata"
+TIME_ZONE = "Asia/Tashkent"
 
 USE_I18N = True
 
 USE_TZ = True
+
+# Demo kuzatuv tezligi: har shuncha daqiqada mehmon navbatdagi zonaga
+# (kameraga) avtomatik o'tadi. Real tizimda bu qiymat ahamiyatsiz —
+# kuzatuv Hikvision kameradagi real hodisalardan keladi.
+DEMO_VISIT_STEP_MINUTES = int(os.getenv("DEMO_VISIT_STEP_MINUTES", "6"))
+
+# O'zbekiston standartlari: hafta dushanbadan boshlanadi,
+# sana/kun formati mahalliy ko'rinishda.
+FIRST_DAY_OF_WEEK = 1
+
+DATE_FORMAT = "d.m.Y"
+
+DATETIME_FORMAT = "d.m.Y H:i"
+
+TIME_FORMAT = "H:i"
+
+SHORT_DATE_FORMAT = "d.m.Y"
+
+DECIMAL_SEPARATOR = "."
+
+THOUSAND_SEPARATOR = " "
+
+USE_THOUSAND_SEPARATOR = True
 
 
 # --------------------------------------------------
@@ -213,7 +252,7 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-DEFAULT_FROM_EMAIL = "Event Management System <noreply@eventsystem.com>"
+DEFAULT_FROM_EMAIL = "Expo Control <noreply@expocontrol.uz>"
 
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
@@ -245,12 +284,23 @@ SECURE_SSL_REDIRECT = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 
+# DEBUG (live-preview) rejimida iframe/proksi'da ishlashi uchun
+# aniq value'lar (ustida belgilangan not DEBUG qiymatini e'lon
+# qilingan joyidan keyin qayta tiklaymiz).
+if DEBUG:
+    CSRF_COOKIE_SAMESITE = "None"
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = "None"
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_HTTPONLY = False
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 SECURE_HSTS_SECONDS = 60 * 60 * 24 * 30 if not DEBUG else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
 SECURE_HSTS_PRELOAD = not DEBUG
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
-X_FRAME_OPTIONS = "DENY"
+X_FRAME_OPTIONS = "SAMEORIGIN" if DEBUG else "DENY"
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -260,6 +310,26 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # --------------------------------------------------
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+
+# --------------------------------------------------
+# Telegram notifications (Uzbekistan market)
+# --------------------------------------------------
+
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+
+
+# --------------------------------------------------
+# SMS notifications — Eskiz.uz (Uzbekistan)
+# --------------------------------------------------
+
+ESKIZ_EMAIL = os.getenv("ESKIZ_EMAIL", "")
+
+ESKIZ_PASSWORD = os.getenv("ESKIZ_PASSWORD", "")
+
+ESKIZ_FROM = os.getenv("ESKIZ_FROM", "4546")
 
 
 # --------------------------------------------------

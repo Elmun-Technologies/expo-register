@@ -1,0 +1,98 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Badge — {{ visitor.full_name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background: #e9ecf3; }
+        .no-print { position: fixed; top: 1rem; left: 1rem; z-index: 10; }
+        .badge-card {
+            width: 340px;
+            margin: 3rem auto 0;
+            border-radius: 1.25rem;
+            overflow: hidden;
+            background: #fff;
+            box-shadow: 0 18px 45px rgba(15,23,42,.18);
+        }
+        .badge-head {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: #fff;
+            padding: 1.2rem 1.4rem;
+        }
+        .badge-body { padding: 1.3rem 1.4rem; }
+        .badge-name { font-size: 1.35rem; font-weight: 800; }
+        .badge-qr { width: 120px; height: 120px; background:#fff; padding:6px; border:1px solid #e2e8f0; border-radius:.7rem; }
+        .badge-foot {
+            background: #f8fafc;
+            border-top: 1px dashed #cbd5e1;
+            padding: .7rem 1.4rem;
+            font-size: .72rem;
+            color: #64748b;
+        }
+        @media print {
+            .no-print { display: none; }
+            .badge-card { margin: 0 auto; box-shadow: none; }
+            body { background: #fff; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="no-print d-flex gap-2">
+    <a href="javascript:history.back()" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Orqaga
+    </a>
+    <button onclick="window.print()" class="btn btn-primary">
+        <i class="bi bi-printer-fill me-1"></i>Chop etish
+    </button>
+</div>
+
+<div class="badge-card">
+    <div class="badge-head d-flex justify-content-between align-items-center">
+        <div>
+            <div class="fw-bold">EXPO</div>
+            <small>Visitor Badge</small>
+        </div>
+        <i class="bi bi-broadcast-pin fs-3"></i>
+    </div>
+
+    <div class="badge-body">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <div class="badge-name">{{ visitor.first_name }} {{ visitor.last_name }}</div>
+                {% if visitor.company %}
+                    <div class="text-muted">{{ visitor.company }}</div>
+                {% endif %}
+                <span class="badge text-bg-light mt-1">{{ visitor.get_purpose_display }}</span>
+            </div>
+            {% if visitor.photo %}
+            <img src="{{ visitor.photo.url }}" alt=""
+                 style="width:64px;height:64px;object-fit:cover;border-radius:.7rem;border:1px solid #e2e8f0;">
+            {% else %}
+            <div style="width:64px;height:64px;border-radius:.7rem;background:#f1f5f9;display:flex;align-items:center;justify-content:center;">
+                <i class="bi bi-person-fill fs-2 text-secondary"></i>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <img src="{{ qr_data_uri }}" alt="QR" class="badge-qr">
+            <div class="text-end small text-muted">
+                <div>Badge ID</div>
+                <div class="fw-bold text-dark">{{ visitor.badge_token.hex|slice:":12"|upper }}</div>
+                <div class="mt-2">{{ visitor.check_in_at|date:"d.m.Y H:i" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="badge-foot text-center">
+        Bu kartochka expo hududida kuzatuv uchun ishlatiladi
+    </div>
+</div>
+
+</body>
+</html>
