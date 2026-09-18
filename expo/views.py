@@ -1,9 +1,13 @@
+import base64
+import csv
+import io
 import json
 import time
 
+import qrcode
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from events.views import get_dashboard_type
@@ -309,3 +313,83 @@ def api_booth_stats(request, booth_id):
             "avg_dwell_min": s["avg_dwell_min"],
         }
     )
+
+
+# ==========================================================
+# BADGE — mehmon kartochkasi (QR bilan chop etish uchun)
+# ==========================================================
+
+def _badge_qr_data_uri(visitor):
+    """Mehmon kartochkasi uchun QR kod (base64 PNG)."""
+    payload = (
+        f"Expo Visitor\nName: {visitor.full_name}\n"
+        f"Badge: {visitor.badge_token.hex[:12].upper()}\n"
+        f"Company: {visitor.company or '-'}\n"
+    )
+    qr = qrcode.make(payload, box_size=8, border=2)
+    buf = io.BytesIO()
+    qr.save(buf, format="PNG")
+    b64 = base64.b64encode(buf.getvalue()).decode("ascii")
+    return f"data:image/png;base64,{b64}"
+
+
+@login_required
+def visitor_badge(request, visitor_id):
+    """Mehmon kartochkasini ko'rsatish (chop etish ekrani)."""
+    visitor = get_object_or_404(ExpoVisitor, pk=visitor_id)
+    if not can_monitor(request.user):
+        owns = Booth.objects.filter(owner=request.user)
+        hit = visitor.tracking_events.filter(booth__in=owns).exists()
+        if not hit:
+            messages.error(request, "Ushbu mehmon sizning stendingizga kelmagan.")
+            return redirect("expo_analytics")
+
+    return render(
+        request,
+        "expo/badge.html",
+        {
+            "visitor": visitor,
+            "qr_data_uri": _badge_qr_data_uri(visitor),
+        },
+    )
+
+
+# ==========================================================
+# CSV EXPORT — Excel uchun
+# ==========================================================
+
+@login_required
+def visitors_export_csv(request):
+    if not can_monitor(request.user):
+        messages.error(request, "Ushbu sahifaga kirish huquqi yo'q.")
+        return redirect("dashboard_home")
+
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = 'attachment; filename="expo_visitors.csv"'
+    response.write("\ufeff")  # BOM — Excel o'zbekcha harflarni to'g'ri ochishi uchun
+
+    writer = csv.writer(response)
+    writer.writerow([
+        "ID", "Ism", "Familiya", "Kompaniya", "Maqsad",
+        "Telefon", "Email", "Holat", "Kirish vaqti", "Chiqish vaqti",
+        "Ichkaridagi daqiqalar", "Oxirgi zona",
+    ])
+
+    for v in ExpoVisitor.objects.order_by("-check_in_at"):
+        writer.writerow([
+            v.id,
+            v.first_name,
+            v.last_name,
+            v.company,
+            v.get_purpose_display(),
+            v.phone,
+            v.email,
+            "Ichkarida" if v.is_active else "Chiqib ketdi",
+            timezone_fmt(v.check_in_at),
+            timezone_fmt(v.check_out_at) if v.check_out_at else "",
+            v.minutes_inside,
+            v.current_zone,
+        ])
+
+    return response
+

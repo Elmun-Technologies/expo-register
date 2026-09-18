@@ -95,3 +95,27 @@ class PermissionsTests(TestCase):
         self.client.login(username="admin", password="pass")
         resp = self.client.get("/expo/monitor/")
         self.assertEqual(resp.status_code, 200)
+
+
+class BadgeAndExportTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(username="admin", password="pass")
+        self.visitor = ExpoVisitor.objects.create(
+            first_name="Aziz", last_name="Karimov", company="UzAuto",
+        )
+
+    def test_badge_shows_qr_code(self):
+        self.client.login(username="admin", password="pass")
+        resp = self.client.get(f"/expo/visitors/{self.visitor.id}/badge/")
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode()
+        self.assertIn("data:image/png;base64", content)  # QR kod bor
+
+    def test_csv_export_downloads(self):
+        self.client.login(username="admin", password="pass")
+        resp = self.client.get("/expo/visitors/export/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["Content-Disposition"], 'attachment; filename="expo_visitors.csv"')
+        content = resp.content.decode("utf-8")
+        self.assertIn("Ism", content)  # sarlavha qatori
+        self.assertIn("Aziz", content)  # mehmon ma'lumoti

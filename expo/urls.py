@@ -12,7 +12,9 @@ urlpatterns = [
 
     # Visitors
     path("visitors/", views.visitors_list, name="expo_visitors"),
+    path("visitors/export/", views.visitors_export_csv, name="expo_visitors_export"),
     path("visitors/<int:visitor_id>/", views.visitor_detail, name="expo_visitor_detail"),
+    path("visitors/<int:visitor_id>/badge/", views.visitor_badge, name="expo_visitor_badge"),
 
     # Devices (kameralar va stendlar)
     path("devices/", views.devices, name="expo_devices"),

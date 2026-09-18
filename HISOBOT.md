@@ -89,6 +89,8 @@ Stend egasi: "mening stendimga qancha mehmon keldi, qancha vaqt turishdi" statis
 | Tadbirlar | `/events/` | Login bilan |
 | Dashboard | `/dashboard/` | Rollarga qarab |
 | Hisobotlar | `/dashboard/reports/` | Admin |
+| Badge (QR kartochka) | `/expo/visitors/<id>/badge/` | Admin, Security, Stend egasi |
+| CSV eksport | `/expo/visitors/export/` | Admin, Security |
 
 ---
 
@@ -113,7 +115,10 @@ Demo ma'lumotlarni qayta yaratish: `python manage.py seed_expo_demo`
 2. **Xavfsizlik paneli** — real vaqtda kameralar + ogohlantirishlar + ichkaridagi mehmonlar (avto-yangilanish 5 s).
 3. **Stend analitikasi** — qaysi stend qanchalik qiziq? (noyob mehmonlar, tashriflar, o'rtacha vaqt).
 4. **Reyting** — eng qiziq stendlar ro'yxati (admin uchun).
-5. **To'liq Eventify funksionalligi** — tadbirlar, QR-ticket, check-in, notification'lar, chatbot.
+5. **QR-kartochka (Badge)** — har bir mehmonga unikal QR-kodli kartochka, chop etish imkoniyati bilan.
+6. **CSV eksport** — mehmonlar ro'yxatini Excel uchun yuklab olish (o'zbekcha BOM bilan).
+7. **Admin dashboard integratsiyasi** — Expo ko'rsatkichlari (faol mehmonlar, stendlar, kameralar) asosiy dashboard'da.
+8. **To'liq Eventify funksionalligi** — tadbirlar, QR-ticket, check-in, notification'lar, chatbot.
 
 ### Kelajakda (qatlam tayyor, ulash kerak)
 6. **Haqiqiy Hikvision kameralar** — `Camera.mode = LIVE` qilib IP/login/parol kiritiladi (adapter `hikvision.py` tayyor).
