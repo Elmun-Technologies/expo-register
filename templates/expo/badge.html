@@ -69,6 +69,14 @@
                 {% endif %}
                 <span class="badge text-bg-light mt-1">{{ visitor.get_purpose_display }}</span>
             </div>
+            {% if visitor.photo %}
+            <img src="{{ visitor.photo.url }}" alt=""
+                 style="width:64px;height:64px;object-fit:cover;border-radius:.7rem;border:1px solid #e2e8f0;">
+            {% else %}
+            <div style="width:64px;height:64px;border-radius:.7rem;background:#f1f5f9;display:flex;align-items:center;justify-content:center;">
+                <i class="bi bi-person-fill fs-2 text-secondary"></i>
+            </div>
+            {% endif %}
         </div>
 
         <div class="d-flex justify-content-between align-items-center mt-3">

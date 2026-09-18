@@ -27,8 +27,14 @@ class KioskCheckinForm(forms.ModelForm):
     Expo kiosk ekranidagi kirish formasi.
 
     Mehmon faqat ism va familiyani kiritishi bilan tizim ishga tushadi;
-    qolgan maydonlar ixtiyoriy.
+    qolgan maydonlar ixtiyoriy. ``photo_data`` veb-kameradan olingan
+    suratning base64 (data URL) ko'rinishi — maxfiy maydon.
     """
+
+    photo_data = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput(),
+    )
 
     class Meta:
         model = ExpoVisitor

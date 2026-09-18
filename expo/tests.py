@@ -119,3 +119,43 @@ class BadgeAndExportTests(TestCase):
         content = resp.content.decode("utf-8")
         self.assertIn("Ism", content)  # sarlavha qatori
         self.assertIn("Aziz", content)  # mehmon ma'lumoti
+
+
+class CameraAndPhotoTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(username="admin", password="pass")
+        self.camera = Camera.objects.create(name="Kam 1", zone="Kirish")
+
+    def test_camera_toggle_requires_admin(self):
+        # anonim foydalanuvchi rad etiladi
+        resp = self.client.get(f"/expo/devices/camera/{self.camera.id}/toggle/")
+        self.assertEqual(resp.status_code, 302)
+
+        self.client.login(username="admin", password="pass")
+        before = self.camera.is_enabled
+        resp = self.client.get(f"/expo/devices/camera/{self.camera.id}/toggle/")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data["is_enabled"], not before)
+
+    def test_kiosk_accepts_photo_data(self):
+        # kichik 1x1 PNG ni base64 qilib yuboramiz
+        import base64
+        png = base64.b64decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+        )
+        data_url = "data:image/png;base64," + base64.b64encode(png).decode()
+        resp = self.client.post(
+            "/expo/kiosk/",
+            {
+                "first_name": "Foto",
+                "last_name": "Test",
+                "company": "",
+                "purpose": "BUSINESS",
+                "phone": "",
+                "photo_data": data_url,
+            },
+        )
+        self.assertEqual(resp.status_code, 200)
+        visitor = ExpoVisitor.objects.get(first_name="Foto")
+        self.assertTrue(visitor.photo)  # surat saqlangan

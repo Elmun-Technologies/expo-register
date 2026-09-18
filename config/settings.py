@@ -291,6 +291,15 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 
 # --------------------------------------------------
+# Telegram notifications (Uzbekistan market)
+# --------------------------------------------------
+
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+
+
+# --------------------------------------------------
 # Logging
 # --------------------------------------------------
 # Errors always print to the console (visible in server logs /

@@ -15,7 +15,7 @@ from datetime import timedelta
 
 from django.utils import timezone
 
-from . import simulation
+from . import simulation, telegram
 from .models import Booth, Camera, ExpoVisitor, TrackingEvent, VisitAlert
 
 
@@ -57,6 +57,9 @@ def start_tracking(visitor):
     if first_camera:
         first_camera.is_online = True
         first_camera.last_seen = timezone.now()
+
+    # Telegram orqali xavfsizlik xodimlarini xabardor qilish
+    telegram.notify_new_visitor(visitor)
 
     return alert
 
@@ -130,6 +133,9 @@ def check_out(visitor):
         level=VisitAlert.Level.WARNING,
         message=f"{visitor.full_name} hududni tark etdi",
     )
+
+    telegram.notify_visitor_left(visitor)
+
     return "Chiqish (Exit)"
 
 

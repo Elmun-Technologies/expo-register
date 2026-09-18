@@ -167,6 +167,20 @@
             </div>
         </div>
     </div>
+
+    <!-- ===== Zonalar aktivligi ===== -->
+    <div class="col-12">
+        <div class="dashboard-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-bar-chart-line-fill me-2"></i>Zonalar bo'yicha aktivlik</span>
+                <span class="badge text-bg-light">jonli</span>
+            </div>
+            <div class="card-body">
+                <canvas id="zoneChart" height="90"></canvas>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 {% endblock %}
@@ -183,9 +197,41 @@
             renderAlerts(data.alerts);
             renderVisitors(data.active_visitors);
             renderCameras(data.cameras);
+            renderZones(data.zones || {});
         } catch (e) {
             console.error(e);
         }
+    }
+
+    var zoneChart = null;
+    function renderZones(zones) {
+        var canvas = document.getElementById('zoneChart');
+        if (!canvas) return;
+        var labels = Object.keys(zones);
+        var values = Object.values(zones);
+        if (!window.Chart) return;
+        if (zoneChart) { zoneChart.destroy(); }
+        zoneChart = new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: labels.length ? labels : ['No data'],
+                datasets: [{
+                    label: 'Ko\'rishlar soni',
+                    data: values,
+                    backgroundColor: 'rgba(99, 102, 241, 0.75)',
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { beginAtZero: true, ticks: { precision: 0 } },
+                    y: { ticks: { font: { size: 11 } } },
+                },
+            },
+        });
     }
 
     function renderOverview(o) {

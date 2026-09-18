@@ -110,6 +110,31 @@
 
             <form method="post" novalidate>
                 {% csrf_token %}
+                {{ form.photo_data }}
+
+                <!-- Veb-kamera (ixtiyoriy) -->
+                <div class="mb-3 text-center">
+                    <div class="photo-box mx-auto mb-2" id="photoBox" style="width:150px;height:150px;border-radius:1rem;border:1px dashed rgba(255,255,255,.35);background:rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                        <div id="photoPlaceholder" class="text-white-50">
+                            <i class="bi bi-camera" style="font-size:2rem;"></i>
+                            <div class="small">{% if lang == "ru" %}Фото{% else %}Surat{% endif %}</div>
+                        </div>
+                        <video id="camVideo" autoplay playsinline muted style="display:none;width:100%;height:100%;object-fit:cover;"></video>
+                        <img id="photoPreview" style="display:none;width:100%;height:100%;object-fit:cover;" alt="">
+                    </div>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="button" id="camToggle" class="btn btn-sm btn-outline-light">
+                            <i class="bi bi-camera-video me-1"></i>{% if lang == "ru" %}Камера{% else %}Kamera{% endif %}
+                        </button>
+                        <button type="button" id="camCapture" class="btn btn-sm btn-light" disabled>
+                            <i class="bi bi-camera me-1"></i>{% if lang == "ru" %}Снять{% else %}Rasmga olish{% endif %}
+                        </button>
+                        <button type="button" id="camReset" class="btn btn-sm btn-outline-light d-none">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </button>
+                    </div>
+                </div>
+
                 <div class="mb-3">
                     <label class="form-label text-white-50 small">{% if lang == "ru" %}Имя *{% else %}Ism *{% endif %}</label>
                     {{ form.first_name }}
@@ -142,6 +167,88 @@
 
     </div>
 </div>
+
+<script>
+(function () {
+    var video = document.getElementById('camVideo');
+    var preview = document.getElementById('photoPreview');
+    var placeholder = document.getElementById('photoPlaceholder');
+    var toggleBtn = document.getElementById('camToggle');
+    var captureBtn = document.getElementById('camCapture');
+    var resetBtn = document.getElementById('camReset');
+    var dataInput = document.querySelector('[name="photo_data"]');
+    var stream = null;
+
+    function stopStream() {
+        if (stream) {
+            stream.getTracks().forEach(function (t) { t.stop(); });
+            stream = null;
+        }
+    }
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function () {
+            if (stream) {
+                stopStream();
+                video.style.display = 'none';
+                video.srcObject = null;
+                captureBtn.disabled = true;
+                if (!preview.src) placeholder.style.display = '';
+                toggleBtn.innerHTML = '<i class="bi bi-camera-video me-1"></i>' + (video.dataset.lang === 'ru' ? 'Камера' : 'Kamera');
+                return;
+            }
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert('Kamera qo\'llab-quvvatlanmaydi');
+                return;
+            }
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function (s) {
+                    stream = s;
+                    video.srcObject = s;
+                    video.style.display = '';
+                    placeholder.style.display = 'none';
+                    preview.style.display = 'none';
+                    preview.src = '';
+                    captureBtn.disabled = false;
+                    dataInput.value = '';
+                    resetBtn.classList.add('d-none');
+                })
+                .catch(function () {
+                    alert('Kameraga ruxsat berilmadi');
+                });
+        });
+    }
+
+    if (captureBtn) {
+        captureBtn.addEventListener('click', function () {
+            var canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            dataInput.value = dataUrl;
+            preview.src = dataUrl;
+            preview.style.display = '';
+            video.style.display = 'none';
+            placeholder.style.display = 'none';
+            captureBtn.disabled = true;
+            resetBtn.classList.remove('d-none');
+            stopStream();
+        });
+    }
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function () {
+            dataInput.value = '';
+            preview.src = '';
+            preview.style.display = 'none';
+            placeholder.style.display = '';
+            resetBtn.classList.add('d-none');
+            captureBtn.disabled = true;
+        });
+    }
+})();
+</script>
 
 </body>
 </html>

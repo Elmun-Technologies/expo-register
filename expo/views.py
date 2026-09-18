@@ -3,10 +3,12 @@ import csv
 import io
 import json
 import time
+import uuid
 
 import qrcode
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.files.base import ContentFile
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -33,6 +35,30 @@ def can_monitor(user):
     return is_admin(user) or is_security(user)
 
 
+def _save_visitor_photo(visitor, photo_data):
+    """
+    Veb-kameradan olingan base64 (data URL) suratni
+    mehmon photosiga saqlash.
+    """
+    if not photo_data or "," not in photo_data:
+        return False
+    header, b64 = photo_data.split(",", 1)
+    try:
+        raw = base64.b64decode(b64)
+    except Exception:
+        return False
+
+    ext = "jpg"
+    if "png" in header:
+        ext = "png"
+    visitor.photo.save(
+        f"{uuid.uuid4().hex}.{ext}",
+        ContentFile(raw),
+        save=False,
+    )
+    return True
+
+
 # ==========================================================
 # KIOSK — mehmon kirishi (ochiq ekran)
 # ==========================================================
@@ -52,8 +78,13 @@ def kiosk(request):
                 visitor.badge_token.hex
             )
             visitor.planned_path = simulation.build_visitor_path(visitor)
-            visitor.save()
 
+            # Veb-kameradan olingan suratni saqlash
+            photo_data = form.cleaned_data.get("photo_data", "")
+            if photo_data:
+                _save_visitor_photo(visitor, photo_data)
+
+            visitor.save()
             services.start_tracking(visitor)
             created_visitor = visitor
             form = KioskCheckinForm(lang=lang)
@@ -140,12 +171,15 @@ def monitor_live_api(request):
         for c in Camera.objects.filter(is_enabled=True)
     ]
 
+    zone_data = analytics.zone_heatmap()
+
     return JsonResponse(
         {
             "overview": analytics.expo_overview(),
             "alerts": alerts,
             "active_visitors": active_visitors,
             "cameras": cameras,
+            "zones": zone_data,
         }
     )
 
@@ -268,6 +302,24 @@ def devices(request):
             "booths": booths,
             "dashboard_type": get_dashboard_type(request.user),
         },
+    )
+
+
+@login_required
+def camera_toggle(request, camera_id):
+    """Kamerani yoqish / o'chirish (admin)."""
+    if not is_admin(request.user):
+        return JsonResponse({"error": "forbidden"}, status=403)
+
+    camera = get_object_or_404(Camera, pk=camera_id)
+    camera.is_enabled = not camera.is_enabled
+    camera.save(update_fields=["is_enabled"])
+    return JsonResponse(
+        {
+            "ok": True,
+            "camera_id": camera.id,
+            "is_enabled": camera.is_enabled,
+        }
     )
 
 

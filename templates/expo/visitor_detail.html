@@ -25,6 +25,12 @@
         <div class="dashboard-card">
             <div class="card-header"><i class="bi bi-info-circle me-2"></i>Ma'lumot</div>
             <div class="card-body">
+                {% if visitor.photo %}
+                <div class="text-center mb-3">
+                    <img src="{{ visitor.photo.url }}" alt="{{ visitor.full_name }}"
+                         style="width:140px;height:140px;object-fit:cover;border-radius:1rem;border:1px solid #e2e8f0;">
+                </div>
+                {% endif %}
                 <table class="table table-sm mb-0">
                     <tr><th class="text-muted">Ism</th><td>{{ visitor.first_name }}</td></tr>
                     <tr><th class="text-muted">Familiya</th><td>{{ visitor.last_name }}</td></tr>
