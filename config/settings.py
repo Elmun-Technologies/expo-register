@@ -171,6 +171,11 @@ USE_I18N = True
 
 USE_TZ = True
 
+# Demo kuzatuv tezligi: har shuncha daqiqada mehmon navbatdagi zonaga
+# (kameraga) avtomatik o'tadi. Real tizimda bu qiymat ahamiyatsiz —
+# kuzatuv Hikvision kameradagi real hodisalardan keladi.
+DEMO_VISIT_STEP_MINUTES = int(os.getenv("DEMO_VISIT_STEP_MINUTES", "6"))
+
 # O'zbekiston standartlari: hafta dushanbadan boshlanadi,
 # sana/kun formati mahalliy ko'rinishda.
 FIRST_DAY_OF_WEEK = 1

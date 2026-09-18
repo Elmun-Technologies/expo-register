@@ -171,9 +171,10 @@ Demo ma'lumotlarni qayta yaratish: `python manage.py seed_expo_demo`
 12. **Admin dashboard integratsiyasi** — Expo ko'rsatkichlari (faol mehmonlar, stendlar, kameralar) asosiy dashboard'da.
 13. **To'liq Eventify funksionalligi** — tadbirlar, QR-ticket, check-in, notification'lar, chatbot.
 14. **Hikvision LIVE qatlami** — `Camera.mode = LIVE` + IP/login/parol bilan: Digest auth, jonli snapshot, PTZ preset, RTSP stream URL; SIMULATION'da virtual kadr.
+15. **Avtomatik kuzatuv** — mehmon ro'yxatdan o'tgach, vaqt o'tgani sari kamera-kamera avtomatik o'tib boradi (DEMO rejimda har 6 daqiqada, sozlanadi); yo'l tugagach avtomatik "chiqib ketdi". LIVE kamerada esa har bir qadamda kamerani mehmon joylashgan zonaga buradi.
 
 ### Kelajakda (qatlam tayyor, ulash kerak)
-1. **Kamera'dan avtomatik ob'ekt kuzatish** — Hikvision'ning o'z motion/abonement eventlarini tinglab (ISAPI event subscription) mehmonga bog'lash.
+1. **Kamera'dan real ob'ekt kuzatish** — Hikvision'ning o'z motion/abonement eventlarini tinglab (ISAPI event subscription) mehmonga bog'lash.
 2. **Chuqur yuz tanish (face recognition)** — hozir Haar + yuz izi ishlayapti; katta tadbir uchun FaceNet/Iris.ai kabi chuqur model ulash mumkin (qatlam `face.py` da almashtiriladi).
 3. **To'lov integratsiyasi** — Payme / Click / Payze (pullik tadbirlar uchun).
 4. **Mobil ilova** — kiosk va monitoring'ni tabletkada ishlatish.
@@ -184,7 +185,7 @@ Demo ma'lumotlarni qayta yaratish: `python manage.py seed_expo_demo`
 ## 7. Texnik holat
 
 - ✅ `python manage.py check` — 0 xato
-- ✅ `python manage.py test expo` — 32/32 test o'tdi
+- ✅ `python manage.py test expo` — 34/34 test o'tdi
 - ✅ `migrate` — barcha migratsiyalar qo'llangan (`face_hash`, `visit_type`, `source`, `offline_id`, `registration`)
 - ✅ Server ishga tushirilgan (LIVE PREVIEW, port 8000)
 - ✅ GitHub: barcha ishlar push qilindi

@@ -556,3 +556,61 @@ class HikvisionTests(TestCase):
         Camera.objects.create(name="K1", zone="Kirish (Entrance)")
         # Anonim — redirect
         self.assertEqual(self.client.get("/expo/devices/camera/1/snapshot/").status_code, 302)
+
+
+class AutoTrackingTests(TestCase):
+    """Avtomatik kuzatuv — vaqt bo'yicha progress."""
+
+    def setUp(self):
+        Camera.objects.create(name="Kamera 1", zone="Kirish (Entrance)")
+        Booth.objects.create(booth_number="A01", name="Test Stend", zone="Asosiy zal (Hall A)")
+
+    def test_auto_advance_moves_visitor_by_time(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from expo import services, simulation
+
+        visitor = ExpoVisitor.objects.create(
+            first_name="Aziz", last_name="Karimov", purpose=ExpoVisitor.Purpose.BUSINESS,
+        )
+        visitor.sim_seed = simulation.stable_seed("aziz karimov")
+        visitor.planned_path = simulation.build_visitor_path(visitor)
+        visitor.save(update_fields=["sim_seed", "planned_path"])
+
+        services.start_tracking(visitor)
+        before = visitor.tracking_events.exclude(kind=TrackingEvent.Kind.LEFT).count()
+
+        # Oxirgi hodisani orqaga suramiz — kishi 20 daqiqa ekspoda tursin
+        last_event = visitor.tracking_events.order_by("-detected_at").first()
+        last_event.detected_at = timezone.now() - timedelta(minutes=20)
+        last_event.save(update_fields=["detected_at"])
+
+        services.auto_advance_all()
+
+        after = visitor.tracking_events.exclude(kind=TrackingEvent.Kind.LEFT).count()
+        self.assertGreater(after, before)
+
+    def test_auto_advance_walks_full_path_then_checks_out(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from expo import services, simulation
+
+        visitor = ExpoVisitor.objects.create(
+            first_name="Nodir", last_name="Toshev", purpose=ExpoVisitor.Purpose.BUSINESS,
+        )
+        visitor.sim_seed = simulation.stable_seed("nodir toshev")
+        visitor.planned_path = simulation.build_visitor_path(visitor)
+        visitor.save(update_fields=["sim_seed", "planned_path"])
+
+        services.start_tracking(visitor)
+
+        # Juda uzoq vaqt o'tdi — yo'l tugab, mehmon chiqib ketdi
+        last_event = visitor.tracking_events.order_by("-detected_at").first()
+        last_event.detected_at = timezone.now() - timedelta(hours=3)
+        last_event.save(update_fields=["detected_at"])
+
+        services.auto_advance_all()
+
+        visitor.refresh_from_db()
+        self.assertEqual(visitor.status, ExpoVisitor.Status.LEFT)
+        self.assertIsNotNone(visitor.check_out_at)

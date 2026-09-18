@@ -81,6 +81,49 @@ def start_tracking(visitor):
     return alert
 
 
+def auto_advance_all():
+    """
+    Barcha faol mehmonlar uchun vaqt bo'yicha avtomatik kuzatuv progressi.
+
+    Har bir mehman o'z yo'lida (planned_path) yurydi. Oxirgi hodisadan
+    beri ``DEMO_VISIT_STEP_MINUTES`` daqiqa o'tganda navbatdagi zonaga
+    (kameraga) o'tadi. Yo'l tugab, vaqt o'tib ketsa — avtomatik chiqib
+    ketadi.
+
+    Background worker talab qilinmaydi: monitoring paneli har so'rovda
+    shuni chaqiradi (DB o'qib, kerak bo'lganda yozadi).
+    """
+    from django.conf import settings
+
+    step_minutes = getattr(settings, "DEMO_VISIT_STEP_MINUTES", 6)
+    now = timezone.now()
+
+    for visitor in ExpoVisitor.objects.filter(status=ExpoVisitor.Status.ACTIVE).iterator():
+        try:
+            _auto_advance_visitor(visitor, step_minutes, now)
+        except Exception:  # noqa: BLE001
+            logger.exception("Avtomatik kuzatuv xatosi (visitor %s)", visitor.pk)
+
+
+def _auto_advance_visitor(visitor, step_minutes, now):
+    """Bitta mehmon uchun vaqt bo'yicha progress (avtomatik)."""
+    if not visitor.is_active:
+        return
+
+    last_event = visitor.tracking_events.order_by("-detected_at").first()
+    last_at = last_event.detected_at if last_event else visitor.check_in_at
+
+    step_seconds = step_minutes * 60
+    if (now - last_at).total_seconds() < step_seconds:
+        return
+
+    steps = int((now - last_at).total_seconds() // step_seconds)
+    for _ in range(min(steps, 20)):
+        if not visitor.is_active:
+            break
+        advance_tracking(visitor)
+
+
 def advance_tracking(visitor):
     """
     Mehmonni navbatdagi zonaga "ko'chirish" (simulyatsiya).
@@ -123,6 +166,15 @@ def advance_tracking(visitor):
         camera.is_online = True
         camera.last_seen = timezone.now()
         camera.save(update_fields=["is_online", "last_seen"])
+        # LIVE kamerani mehmon joylashgan joyga burish —
+        # "aynan shu mijoz kuzatilmoqda".
+        if camera.mode == Camera.Mode.LIVE:
+            try:
+                from . import hikvision
+
+                hikvision.goto_preset(camera, preset_id=1)
+            except Exception:  # noqa: BLE001
+                logger.warning("LIVE kamera PTZ sozlab bo'lmadi.", exc_info=True)
 
     visit_alert_on_detection(visitor, next_zone)
     return next_zone

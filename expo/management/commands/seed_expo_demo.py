@@ -136,6 +136,20 @@ class Command(BaseCommand):
             name="Texnologiya",
             defaults={"slug": "texnologiya"},
         )
+        # Organizer — admin foydalanuvchi (yoki biron organizator).
+        organizer = (
+            User.objects.filter(role=User.Role.ORGANIZER).first()
+            or User.objects.filter(is_superuser=True).first()
+            or User.objects.filter(username="expo_admin").first()
+        )
+        if not organizer:
+            organizer = User.objects.create_user(
+                username="expo_organizer",
+                first_name="Expo",
+                last_name="Organizer",
+                role=User.Role.ORGANIZER,
+            )
+
         event, _ = Event.objects.get_or_create(
             title="O'zbekiston Expo — Texnologiyalar 2026",
             defaults={
@@ -143,11 +157,12 @@ class Command(BaseCommand):
                 "description": "O'zbekiston texnologiyalar ko'rgazmasi",
                 "venue": "Toshkent, Uzexpocentre",
                 "category": category,
+                "organizer": organizer,
                 "status": Event.Status.PUBLISHED,
                 "event_date": "2026-10-15",
                 "start_time": "10:00:00",
                 "end_time": "18:00:00",
-                "registration_deadline": "2026-10-14 23:59:59",
+                "registration_deadline": "2026-10-14T23:59:59+05:00",
                 "max_capacity": 1000,
                 "available_seats": 990,
                 "price": 0,

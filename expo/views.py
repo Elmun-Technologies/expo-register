@@ -161,6 +161,9 @@ def monitor_live_api(request):
     if not can_monitor(request.user):
         return JsonResponse({"error": "forbidden"}, status=403)
 
+    # Vaqt bo'yicha avtomatik kuzatuv progressi (DEMO rejim).
+    services.auto_advance_all()
+
     alerts = [
         {
             "id": a.id,
@@ -223,6 +226,9 @@ def api_advance(request, visitor_id):
         return JsonResponse({"error": "forbidden"}, status=403)
 
     visitor = get_object_or_404(ExpoVisitor, pk=visitor_id)
+    # Avval hamma uchun avtomatik (vaqt bo'yicha) progress,
+    # keyin qo'lda so'ralgan qadam.
+    services.auto_advance_all()
     zone = services.advance_tracking(visitor)
 
     return JsonResponse(
