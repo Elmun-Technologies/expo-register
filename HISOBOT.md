@@ -51,6 +51,11 @@ Stend egasi: "mening stendimga qancha mehmon keldi, qancha vaqt turishdi" statis
 | `hikvision.py` | Hikvision ISAPI/RTSP adapter qatlami (LIVE rejim uchun tayyor) |
 | `simulation.py` | Demo rejim uchun deterministik harakat yo'llari |
 | `forms.py` | Kiosk formasi (O'z/Rus tilli) |
+| `face.py` | Yuzni aniqlash (OpenCV Haar) + yuz izi (hash) + **dublikat nazorati** |
+| `pdf.py` | PDF hisobotlar: stend analitikasi + mehmonlar ro'yxati (Cyrillic qo'llab-quvvatlash bilan) |
+| `sms.py` | **Eskiz.uz** SMS xabarnoma adapteri (O'zbekiston SMS provayderi) |
+| `telegram.py` | Telegram xabarnoma (admin guruhga yangi mehmon haqida xabar) |
+| `data/haarcascade_frontalface_default.xml` | OpenCV yuzni aniqlash modeli fayli |
 
 ### 🔐 Yangi rollar va huquqlar
 
@@ -90,7 +95,10 @@ Stend egasi: "mening stendimga qancha mehmon keldi, qancha vaqt turishdi" statis
 | Dashboard | `/dashboard/` | Rollarga qarab |
 | Hisobotlar | `/dashboard/reports/` | Admin |
 | Badge (QR kartochka) | `/expo/visitors/<id>/badge/` | Admin, Security, Stend egasi |
-| CSV eksport | `/expo/visitors/export/` | Admin, Security |
+| CSV eksport (mehmonlar) | `/expo/visitors/export/` | Admin, Security |
+| PDF hisobot (mehmonlar) | `/expo/visitors/pdf/` | Admin, Security |
+| PDF hisobot (analitika) | `/expo/analytics/pdf/` | Admin |
+| CSV eksport (stend mehmonlari) | `/expo/analytics/booth/<id>/export/` | Admin, shu stend egasi |
 
 ---
 
@@ -115,38 +123,40 @@ Demo ma'lumotlarni qayta yaratish: `python manage.py seed_expo_demo`
 2. **Xavfsizlik paneli** — real vaqtda kameralar + ogohlantirishlar + ichkaridagi mehmonlar (avto-yangilanish 5 s).
 3. **Stend analitikasi** — qaysi stend qanchalik qiziq? (noyob mehmonlar, tashriflar, o'rtacha vaqt).
 4. **Reyting** — eng qiziq stendlar ro'yxati (admin uchun).
-5. **QR-kartochka (Badge)** — har bir mehmonga unikal QR-kodli kartochka, chop etish imkoniyati bilan.
-6. **CSV eksport** — mehmonlar ro'yxatini Excel uchun yuklab olish (o'zbekcha BOM bilan).
-7. **Admin dashboard integratsiyasi** — Expo ko'rsatkichlari (faol mehmonlar, stendlar, kameralar) asosiy dashboard'da.
-8. **To'liq Eventify funksionalligi** — tadbirlar, QR-ticket, check-in, notification'lar, chatbot.
+5. **Yuzni aniqlash + dublikat nazorati** — kiosk kamerasi suratidan yuz olinadi va bir odam ikkinchi marta ro'yxatdan o'tmaydi (ism yoki yuz bo'yicha aniqlanadi).
+6. **QR-kartochka (Badge)** — har bir mehmonga unikal QR-kodli kartochka, chop etish imkoniyati bilan.
+7. **CSV eksport** — mehmonlar ro'yxati (umumiy) va har bir stend uchun alohida (o'zbekcha BOM bilan).
+8. **PDF hisobotlar** — stend analitikasi va mehmonlar ro'yxati (o'zbekcha/ruscha shrift bilan).
+9. **Telegram + SMS xabarnoma** — yangi mehmon ro'yxatdan o'tganda admin guruhga Telegram xabar va telefonga Eskiz.uz SMS.
+10. **Admin dashboard integratsiyasi** — Expo ko'rsatkichlari (faol mehmonlar, stendlar, kameralar) asosiy dashboard'da.
+11. **To'liq Eventify funksionalligi** — tadbirlar, QR-ticket, check-in, notification'lar, chatbot.
 
 ### Kelajakda (qatlam tayyor, ulash kerak)
-6. **Haqiqiy Hikvision kameralar** — `Camera.mode = LIVE` qilib IP/login/parol kiritiladi (adapter `hikvision.py` tayyor).
-7. **Yuz tanish (face recognition)** — kamera kadridan mehmonni avtomatik tanish (hozir adaptr tayyor, ML qo'shish kerak).
-8. **Badge / QR chiqarish** — mehmon kartochkasi (badge_token allaqachon bor).
-9. **SMS/Telegram xabarnoma** — O'zbekistonda mashhur; hozir email+in-app notif bo'lib, SMS provayderi qo'shish mumkin.
-10. **To'lov integratsiyasi** — Payme / Click / Payze (pullik tadbirlar uchun).
-11. **Tahlil/eksport** — statistikani Excel/PDF ko'rinishida eksport.
-12. **Mobil ilova** — kiosk va monitoring'ni tabletkada ishlatish.
+1. **Haqiqiy Hikvision kameralar** — `Camera.mode = LIVE` qilib IP/login/parol kiritiladi (adapter `hikvision.py` tayyor).
+2. **Chuqur yuz tanish (face recognition)** — hozir Haar + yuz izi ishlayapti; katta tadbir uchun FaceNet/Iris.ai kabi chuqur model ulash mumkin (qatlam `face.py` da almashtiriladi).
+3. **To'lov integratsiyasi** — Payme / Click / Payze (pullik tadbirlar uchun).
+4. **Mobil ilova** — kiosk va monitoring'ni tabletkada ishlatish.
+5. **Eskiz.uz real token** — `.env` da `ESKIZ_EMAIL`/`ESKIZ_PASSWORD` kiritilgach SMS avtomatik ishlaydi (hozir konsol rejimi).
 
 ---
 
 ## 7. Texnik holat
 
 - ✅ `python manage.py check` — 0 xato
-- ✅ `python manage.py test expo` — 5/5 test o'tdi
-- ✅ `migrate` — barcha migratsiyalar qo'llangan
-- ✅ Server ishga tushirilgan (LIVE PREVIEW)
-- ✅ GitHub: 2 ta commit push qilindi
+- ✅ `python manage.py test expo` — 16/16 test o'tdi
+- ✅ `migrate` — barcha migratsiyalar qo'llangan (shu jumladan `face_hash` maydoni)
+- ✅ Server ishga tushirilgan (LIVE PREVIEW, port 8000)
+- ✅ GitHub: barcha ishlar push qilindi (`f42f2c8`, `c63da94`)
+- ✅ OpenCV 4.10 yuzni aniqlash + haarcascade modeli bog'langan
 
 ---
 
 ## 8. Keyingi qadamlar (tavsiyalar)
 
-1. **Haqiqiy kamera seriallarini kiriting** va LIVE rejimni sinab ko'ring.
-2. **Yuz tanish (face recognition)** qo'shish — eng katta qiymat beradi.
+1. **Haqiqiy kamera seriallarini kiriting** va LIVE rejimni sinab ko'ring (`Camera.mode = LIVE`).
+2. **Chuqur yuz tanish (FaceNet/Iris.ai)** — katta tadbir uchun aniqroq tanish (hozir Haar+iz ishlayapti).
 3. **Payme/Click to'lov** — pullik eksponingiz bo'lsa.
-4. **SMS xabarnoma** — Eskiz.uz yoki Playmobile orqali.
+4. **SMS xabarnoma (real)** — `env.example` asosida `.env` yarating, Eskiz.uz login/parol kiriting.
 5. **Brendlash** — "Expo Control" nomi/logo'larini to'liq almashtirish.
 
 Rasmiy hisobotning to'liq texnik variantini ham tayyorlab bera olaman (PDF/Markdown).
