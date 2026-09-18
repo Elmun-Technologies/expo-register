@@ -15,7 +15,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from events.views import get_dashboard_type
 
-from . import analytics, services, simulation
+from . import analytics, face, services, simulation
 from .forms import KioskCheckinForm
 from .models import Booth, Camera, ExpoVisitor, TrackingEvent, VisitAlert
 
@@ -70,6 +70,8 @@ def kiosk(request):
         lang = "uz"
 
     created_visitor = None
+    duplicate = None
+    duplicate_reason = ""
 
     if request.method == "POST":
         form = KioskCheckinForm(request.POST, lang=lang)
@@ -84,11 +86,29 @@ def kiosk(request):
             photo_data = form.cleaned_data.get("photo_data", "")
             if photo_data:
                 _save_visitor_photo(visitor, photo_data)
+                # Yuz izini hisoblash (dublikat nazorati uchun)
+                try:
+                    if visitor.photo:
+                        visitor.face_hash = face.face_hash(visitor.photo.path)
+                except Exception:
+                    visitor.face_hash = ""
 
             visitor.save()
-            services.start_tracking(visitor)
-            created_visitor = visitor
-            form = KioskCheckinForm(lang=lang)
+
+            # Dublikat nazorati — bir odam ikkinchi marta ro'yxatdan o'tmasin
+            dup, reason = face.find_duplicate(visitor)
+            if dup:
+                duplicate = dup
+                duplicate_reason = reason
+                # Dublikat — bu yozuvni o'chirib, mavjudiga ishora qilamiz
+                if visitor.photo:
+                    visitor.photo.delete(save=False)
+                visitor.delete()
+                form = KioskCheckinForm(lang=lang)
+            else:
+                services.start_tracking(visitor)
+                created_visitor = visitor
+                form = KioskCheckinForm(lang=lang)
     else:
         form = KioskCheckinForm(lang=lang)
 
@@ -101,6 +121,8 @@ def kiosk(request):
             "form": form,
             "lang": lang,
             "created_visitor": created_visitor,
+            "duplicate": duplicate,
+            "duplicate_reason": duplicate_reason,
             "booth_count": booth_count,
         },
     )
@@ -406,6 +428,48 @@ def api_booth_stats(request, booth_id):
             "avg_dwell_min": s["avg_dwell_min"],
         }
     )
+
+
+# ==========================================================
+# BOOTH CSV EXPORT — stend egasi o'z mehmonlarini yuklab oladi
+# ==========================================================
+
+@login_required
+def booth_visitors_export_csv(request, booth_id):
+    booth = get_object_or_404(Booth, pk=booth_id)
+
+    # Faqat shu stend egasi yoki admin
+    if not is_admin(request.user) and booth.owner_id != request.user.id:
+        messages.error(request, "Ushbu stendga kirish huquqi yo'q.")
+        return redirect("expo_analytics")
+
+    visitors = ExpoVisitor.objects.filter(
+        tracking_events__booth=booth,
+    ).distinct()
+
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    filename = f"stend_{booth.booth_number}_visitors.csv"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    response.write("\ufeff")
+
+    writer = csv.writer(response)
+    writer.writerow([
+        "Ism", "Familiya", "Kompaniya", "Maqsad", "Telefon",
+        "Kirish vaqti", "Chiqish vaqti", "Ichkaridagi daqiqalar",
+    ])
+    for v in visitors:
+        writer.writerow([
+            v.first_name,
+            v.last_name,
+            v.company,
+            v.get_purpose_display(),
+            v.phone,
+            timezone_fmt(v.check_in_at),
+            timezone_fmt(v.check_out_at) if v.check_out_at else "",
+            v.minutes_inside,
+        ])
+
+    return response
 
 
 # ==========================================================

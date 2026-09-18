@@ -34,3 +34,5 @@ tzdata==2026.3
 urllib3==2.7.0
 websockets==16.1.1
 reportlab==5.0.1
+opencv-python-headless==4.10.0.84
+numpy==2.3.5

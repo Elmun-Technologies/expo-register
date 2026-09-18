@@ -1,10 +1,97 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from . import services, simulation
+from . import face, services, simulation
 from .models import Booth, Camera, ExpoVisitor, TrackingEvent, VisitAlert
 
 User = get_user_model()
+
+
+class FaceAndDuplicateTests(TestCase):
+    """Yuzni aniqlash va dublikat nazorati."""
+
+    def setUp(self):
+        Camera.objects.create(name="Kamera 1", zone="Kirish (Entrance)")
+        Booth.objects.create(booth_number="A01", name="Test Stend", zone="Asosiy zal (Hall A)")
+
+    def test_cascade_loads_and_detects_no_face_on_blank(self):
+        # Haarcascade yuklanadi va bo'sh rasmda yuz topilmaydi
+        import cv2
+        import numpy as np
+        import tempfile
+
+        c = face._get_cascade()
+        self.assertFalse(c.empty())
+
+        f = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+        cv2.imwrite(f.name, np.zeros((120, 120, 3), dtype=np.uint8))
+        try:
+            self.assertEqual(face.detect_faces(f.name), [])
+        finally:
+            import os
+            os.unlink(f.name)
+
+    def test_find_duplicate_by_name(self):
+        ExpoVisitor.objects.create(
+            first_name="Aziz",
+            last_name="Karimov",
+            purpose=ExpoVisitor.Purpose.BUSINESS,
+        )
+        dup = ExpoVisitor(
+            first_name="Aziz",
+            last_name="Karimov",
+            purpose=ExpoVisitor.Purpose.BUSINESS,
+        )
+        found, reason = face.find_duplicate(dup)
+        self.assertIsNotNone(found)
+        self.assertEqual(reason, "name")
+
+    def test_no_duplicate_for_distinct_name(self):
+        ExpoVisitor.objects.create(
+            first_name="Aziz",
+            last_name="Karimov",
+            purpose=ExpoVisitor.Purpose.BUSINESS,
+        )
+        other = ExpoVisitor(
+            first_name="Nodir",
+            last_name="Toshev",
+            purpose=ExpoVisitor.Purpose.BUSINESS,
+        )
+        found, _ = face.find_duplicate(other)
+        self.assertIsNone(found)
+
+    def test_kiosk_rejects_duplicate_visitor(self):
+        resp = self.client.post(
+            "/expo/kiosk/",
+            {
+                "first_name": "Aziz",
+                "last_name": "Karimov",
+                "company": "",
+                "purpose": "BUSINESS",
+                "phone": "",
+            },
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(
+            ExpoVisitor.objects.filter(first_name="Aziz").count(), 1
+        )
+
+        # Xuddi shu ism bilan qayta urinish — dublikat
+        resp2 = self.client.post(
+            "/expo/kiosk/",
+            {
+                "first_name": "Aziz",
+                "last_name": "Karimov",
+                "company": "",
+                "purpose": "BUSINESS",
+                "phone": "",
+            },
+        )
+        self.assertEqual(resp2.status_code, 200)
+        self.assertIn("Allaqachon", resp2.content.decode())
+        self.assertEqual(
+            ExpoVisitor.objects.filter(first_name="Aziz").count(), 1
+        )
 
 
 class KioskFlowTests(TestCase):

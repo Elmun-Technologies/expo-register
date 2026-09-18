@@ -73,7 +73,30 @@
 
     <div class="kiosk-card p-4 p-md-5">
 
-        {% if created_visitor %}
+        {% if duplicate %}
+            <div class="kiosk-success">
+                <div class="ring" style="border-color:#f59e0b;color:#f59e0b;background:rgba(245,158,11,.15);"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                <h3 class="fw-bold mb-2">
+                    {% if lang == "ru" %}Уже зарегистрирован!{% else %}Allaqachon ro'yxatdan o'tgan!{% endif %}
+                </h3>
+                <p class="mb-1 fs-5">{{ duplicate.full_name }}</p>
+                {% if duplicate.company %}<p class="text-white-50 mb-2">{{ duplicate.company }}</p>{% endif %}
+                <div class="alert alert-warning bg-warning bg-opacity-25 border-warning text-white">
+                    <i class="bi bi-person-check me-2"></i>
+                    {% if lang == "ru" %}
+                        Этот посетитель уже зарегистрирован
+                    {% else %}
+                        Bu mehmon allaqachon ro'yxatdan o'tgan
+                    {% endif %}
+                    {% if duplicate_reason == "face" %}
+                        <span class="badge bg-warning text-dark ms-1">{% if lang == "ru" %}по лицу{% else %}yuz bo'yicha{% endif %}</span>
+                    {% endif %}
+                </div>
+                <a href="{% url 'expo_kiosk' %}?lang={{ lang }}" class="btn btn-light btn-lg mt-2">
+                    {% if lang == "ru" %}Следующий посетитель{% else %}Keyingi mehmon{% endif %}
+                </a>
+            </div>
+        {% elif created_visitor %}
             <div class="kiosk-success">
                 <div class="ring"><i class="bi bi-camera-video-fill"></i></div>
                 <h3 class="fw-bold mb-2">

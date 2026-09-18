@@ -27,7 +27,12 @@
                         <h5 class="mb-0 fw-bold">{{ row.booth.name }}</h5>
                         <span class="text-muted small">Stend #{{ row.booth.booth_number }} · {{ row.booth.zone|default:"—" }}</span>
                     </div>
-                    <span class="badge text-bg-light fs-6">#{{ forloop.counter }}</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="{% url 'expo_booth_export' row.booth.id %}" class="badge text-bg-light fs-6" title="CSV yuklab olish">
+                            <i class="bi bi-download"></i>
+                        </a>
+                        <span class="badge text-bg-light fs-6">#{{ forloop.counter }}</span>
+                    </div>
                 </div>
                 <div class="row text-center g-2">
                     <div class="col-4">

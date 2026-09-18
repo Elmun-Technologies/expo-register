@@ -112,6 +112,9 @@ class ExpoVisitor(models.Model):
     email = models.EmailField(blank=True)
     photo = models.ImageField(upload_to="expo/visitors/", blank=True, null=True)
 
+    # Yuz izi — dublikat nazorati uchun (suratdan hisoblanadi)
+    face_hash = models.CharField(max_length=32, blank=True, editable=False)
+
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
     check_in_at = models.DateTimeField(default=timezone.now)
     check_out_at = models.DateTimeField(null=True, blank=True)

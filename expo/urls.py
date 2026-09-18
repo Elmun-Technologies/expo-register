@@ -25,6 +25,7 @@ urlpatterns = [
     path("analytics/", views.booth_analytics, name="expo_analytics"),
     path("analytics/pdf/", views.booth_report_pdf, name="expo_analytics_pdf"),
     path("analytics/booth/<int:booth_id>/", views.api_booth_stats, name="expo_booth_stats"),
+    path("analytics/booth/<int:booth_id>/export/", views.booth_visitors_export_csv, name="expo_booth_export"),
 
     # API (simulyatsiya / kuzatuv)
     path("api/advance/<int:visitor_id>/", views.api_advance, name="expo_api_advance"),
