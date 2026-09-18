@@ -11,12 +11,15 @@ Oqim:
    uchun saqlanadi.
 """
 
+import logging
 from datetime import timedelta
 
 from django.utils import timezone
 
 from . import simulation, sms, telegram
 from .models import Booth, Camera, ExpoVisitor, TrackingEvent, VisitAlert
+
+logger = logging.getLogger(__name__)
 
 
 def assign_sim(visitor):
@@ -57,6 +60,17 @@ def start_tracking(visitor):
     if first_camera:
         first_camera.is_online = True
         first_camera.last_seen = timezone.now()
+        first_camera.save(update_fields=["is_online", "last_seen"])
+        # LIVE kamerani kirish nuqtasiga (preset 1) burish —
+        # kuzatuv kameralari "aynan shu mijozni kuzatish"ni boshlaydi.
+        if first_camera.mode == Camera.Mode.LIVE:
+            try:
+                from . import hikvision
+
+                hikvision.goto_preset(first_camera, preset_id=1)
+            except Exception:
+                # Kameraga ulanishda muammo bo'lsa kuzatuv to'xtamaydi.
+                logger.warning("LIVE kamera PTZ sozlab bo'lmadi.", exc_info=True)
 
     # Telegram orqali xavfsizlik xodimlarini xabardor qilish
     telegram.notify_new_visitor(visitor)
