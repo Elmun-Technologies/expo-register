@@ -300,6 +300,17 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 
 
 # --------------------------------------------------
+# SMS notifications — Eskiz.uz (Uzbekistan)
+# --------------------------------------------------
+
+ESKIZ_EMAIL = os.getenv("ESKIZ_EMAIL", "")
+
+ESKIZ_PASSWORD = os.getenv("ESKIZ_PASSWORD", "")
+
+ESKIZ_FROM = os.getenv("ESKIZ_FROM", "4546")
+
+
+# --------------------------------------------------
 # Logging
 # --------------------------------------------------
 # Errors always print to the console (visible in server logs /

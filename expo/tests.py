@@ -159,3 +159,31 @@ class CameraAndPhotoTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         visitor = ExpoVisitor.objects.get(first_name="Foto")
         self.assertTrue(visitor.photo)  # surat saqlangan
+
+
+class SearchAndPdfTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(username="admin", password="pass")
+        Booth.objects.create(booth_number="A01", name="Test Stend", zone="Hall A")
+        ExpoVisitor.objects.create(first_name="Sarvar", last_name="Aslonov", company="UzAuto")
+        ExpoVisitor.objects.create(first_name="Malika", last_name="Azizova", company="Bank")
+
+    def test_visitor_search_filters(self):
+        self.client.login(username="admin", password="pass")
+        resp = self.client.get("/expo/visitors/?search=Sarvar")
+        content = resp.content.decode()
+        self.assertIn("Sarvar", content)
+        self.assertNotIn("Malika", content)
+
+    def test_booth_pdf_downloads(self):
+        self.client.login(username="admin", password="pass")
+        resp = self.client.get("/expo/analytics/pdf/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["Content-Type"], "application/pdf")
+        self.assertTrue(resp.content.startswith(b"%PDF"))
+
+    def test_visitors_pdf_downloads(self):
+        self.client.login(username="admin", password="pass")
+        resp = self.client.get("/expo/visitors/pdf/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.content.startswith(b"%PDF"))

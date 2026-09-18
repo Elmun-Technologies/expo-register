@@ -15,7 +15,7 @@ from datetime import timedelta
 
 from django.utils import timezone
 
-from . import simulation, telegram
+from . import simulation, sms, telegram
 from .models import Booth, Camera, ExpoVisitor, TrackingEvent, VisitAlert
 
 
@@ -60,6 +60,9 @@ def start_tracking(visitor):
 
     # Telegram orqali xavfsizlik xodimlarini xabardor qilish
     telegram.notify_new_visitor(visitor)
+
+    # SMS orqali mehmonni xabardor qilish (telefon bo'lsa)
+    sms.notify_visitor_sms(visitor)
 
     return alert
 

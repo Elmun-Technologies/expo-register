@@ -9,6 +9,7 @@ import qrcode
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.files.base import ContentFile
+from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -248,12 +249,52 @@ def visitors_list(request):
         messages.error(request, "Ushbu sahifaga kirish huquqi yo'q.")
         return redirect("dashboard_home")
 
-    visitors = ExpoVisitor.objects.select_related().all()[:200]
+    visitors = ExpoVisitor.objects.select_related().all()
+
+    # ------------------------------------------
+    # QIDIRUV
+    # ------------------------------------------
+    search = request.GET.get("search", "").strip()
+    if search.lower() == "none":
+        search = ""
+    if search:
+        visitors = visitors.filter(
+            Q(first_name__icontains=search)
+            | Q(last_name__icontains=search)
+            | Q(company__icontains=search)
+            | Q(phone__icontains=search)
+            | Q(email__icontains=search)
+        )
+
+    # ------------------------------------------
+    # HOLAT FILTRI
+    # ------------------------------------------
+    status = request.GET.get("status", "").strip()
+    if status == "active":
+        visitors = visitors.filter(status=ExpoVisitor.Status.ACTIVE)
+    elif status == "left":
+        visitors = visitors.filter(status=ExpoVisitor.Status.LEFT)
+
+    # ------------------------------------------
+    # MAQSAD FILTRI
+    # ------------------------------------------
+    purpose = request.GET.get("purpose", "").strip()
+    if purpose in ExpoVisitor.Purpose.values:
+        visitors = visitors.filter(purpose=purpose)
+
+    total = visitors.count()
+    visitors = visitors[:300]
+
     return render(
         request,
         "expo/visitors.html",
         {
             "visitors": visitors,
+            "total": total,
+            "search": search,
+            "current_status": status,
+            "current_purpose": purpose,
+            "purposes": ExpoVisitor.Purpose.choices,
             "dashboard_type": get_dashboard_type(request.user),
         },
     )
@@ -443,5 +484,37 @@ def visitors_export_csv(request):
             v.current_zone,
         ])
 
+    return response
+
+
+# ==========================================================
+# PDF EXPORT — hisobotlarni PDF sifatida yuklab olish
+# ==========================================================
+
+@login_required
+def booth_report_pdf(request):
+    """Stend analitikasi PDF hisoboti."""
+    if not is_admin(request.user):
+        messages.error(request, "Ushbu sahifaga kirish huquqi yo'q.")
+        return redirect("dashboard_home")
+
+    from .pdf import build_booth_report_pdf
+    pdf_bytes = build_booth_report_pdf()
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="expo_booth_analysis.pdf"'
+    return response
+
+
+@login_required
+def visitors_report_pdf(request):
+    """Mehmonlar ro'yxati PDF hisoboti."""
+    if not can_monitor(request.user):
+        messages.error(request, "Ushbu sahifaga kirish huquqi yo'q.")
+        return redirect("dashboard_home")
+
+    from .pdf import build_visitors_report_pdf
+    pdf_bytes = build_visitors_report_pdf()
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="expo_visitors.pdf"'
     return response
 

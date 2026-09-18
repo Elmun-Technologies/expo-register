@@ -7,12 +7,46 @@
 <div class="page-header d-flex justify-content-between align-items-center flex-wrap mb-4">
     <div>
         <h2 class="fw-bold"><i class="bi bi-people-fill text-primary me-2"></i>Mehmonlar</h2>
-        <p class="text-muted mb-0">Expo hududiga kirgan barcha mehmonlar ro'yxati</p>
+        <p class="text-muted mb-0">Expo hududiga kirgan barcha mehmonlar ro'yxati — jami: {{ total }}</p>
     </div>
     <div class="d-flex gap-2">
         <a href="{% url 'expo_monitor' %}" class="btn btn-outline-primary"><i class="bi bi-camera-video me-2"></i>Monitoring</a>
-        <a href="{% url 'expo_visitors_export' %}" class="btn btn-outline-success"><i class="bi bi-download me-2"></i>CSV eksport</a>
+        <a href="{% url 'expo_visitors_export' %}" class="btn btn-outline-success"><i class="bi bi-download me-2"></i>CSV</a>
+        <a href="{% url 'expo_visitors_pdf' %}" class="btn btn-outline-danger"><i class="bi bi-file-earmark-pdf me-2"></i>PDF</a>
         <a href="{% url 'expo_kiosk' %}" class="btn btn-primary" target="_blank"><i class="bi bi-person-plus me-2"></i>Yangi mehmon</a>
+    </div>
+</div>
+
+<!-- ===== FILTER PANEL ===== -->
+<div class="dashboard-card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label small text-muted">Qidiruv</label>
+                <input type="text" name="search" value="{{ search }}" class="form-control"
+                       placeholder="Ism, familiya, kompaniya, telefon...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Holat</label>
+                <select name="status" class="form-select">
+                    <option value="">Barchasi</option>
+                    <option value="active" {% if current_status == "active" %}selected{% endif %}>Ichkarida</option>
+                    <option value="left" {% if current_status == "left" %}selected{% endif %}>Chiqib ketdi</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted">Maqsad</label>
+                <select name="purpose" class="form-select">
+                    <option value="">Barchasi</option>
+                    {% for value, label in purposes %}
+                    <option value="{{ value }}" {% if current_purpose == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel me-1"></i>Filtrlash</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -34,8 +68,19 @@
                     {% for v in visitors %}
                     <tr>
                         <td>
-                            <strong>{{ v.full_name }}</strong>
-                            <div class="text-muted small">{{ v.email|default:"—" }}</div>
+                            <div class="d-flex align-items-center gap-2">
+                                {% if v.photo %}
+                                    <img src="{{ v.photo.url }}" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:.6rem;">
+                                {% else %}
+                                    <div style="width:40px;height:40px;border-radius:.6rem;background:#eef2ff;color:#6366f1;display:flex;align-items:center;justify-content:center;">
+                                        {{ v.first_name|slice:":1"|upper }}
+                                    </div>
+                                {% endif %}
+                                <div>
+                                    <strong>{{ v.full_name }}</strong>
+                                    <div class="text-muted small">{{ v.phone|default:v.email|default:"—" }}</div>
+                                </div>
+                            </div>
                         </td>
                         <td>{{ v.company|default:"—" }}</td>
                         <td><span class="badge text-bg-light">{{ v.get_purpose_display }}</span></td>
@@ -53,7 +98,13 @@
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="6" class="text-center text-muted py-4">Hali mehmon yo'q. Kiosk orqali qo'shing.</td></tr>
+                    <tr><td colspan="6" class="text-center text-muted py-4">
+                        {% if search or current_status or current_purpose %}
+                            Qidiruv bo'yicha natija topilmadi.
+                        {% else %}
+                            Hali mehmon yo'q. Kiosk orqali qo'shing.
+                        {% endif %}
+                    </td></tr>
                     {% endfor %}
                 </tbody>
             </table>

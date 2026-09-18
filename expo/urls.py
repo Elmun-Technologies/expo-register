@@ -13,6 +13,7 @@ urlpatterns = [
     # Visitors
     path("visitors/", views.visitors_list, name="expo_visitors"),
     path("visitors/export/", views.visitors_export_csv, name="expo_visitors_export"),
+    path("visitors/pdf/", views.visitors_report_pdf, name="expo_visitors_pdf"),
     path("visitors/<int:visitor_id>/", views.visitor_detail, name="expo_visitor_detail"),
     path("visitors/<int:visitor_id>/badge/", views.visitor_badge, name="expo_visitor_badge"),
 
@@ -22,6 +23,7 @@ urlpatterns = [
 
     # Stend analitikasi
     path("analytics/", views.booth_analytics, name="expo_analytics"),
+    path("analytics/pdf/", views.booth_report_pdf, name="expo_analytics_pdf"),
     path("analytics/booth/<int:booth_id>/", views.api_booth_stats, name="expo_booth_stats"),
 
     # API (simulyatsiya / kuzatuv)
