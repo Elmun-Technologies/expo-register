@@ -186,6 +186,49 @@ class ExpoVisitor(models.Model):
         return reverse("expo_visitor_detail", args=[self.pk])
 
 
+class TelegramProfile(models.Model):
+    """
+    Telegram foydalanuvchisi bilan Eventify foydalanuvchisini bog'lash.
+
+    Mijoz botda ro'yxatdan o'tishi mumkin (mehmon sifatida) yoki
+    manager bo'lishi mumkin (kirish nazorati). Konversatsiya holati
+    ``state`` va ``data`` (JSON) da saqlanadi — bot qayta ishga
+    tushsa ham holat yo'qolmaydi.
+    """
+
+    class Kind(models.TextChoices):
+        MEMBER = "MEMBER", "Mehmon (mijoz)"
+        MANAGER = "MANAGER", "Manager (kirish nazorati)"
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="telegram_profile",
+    )
+
+    telegram_id = models.BigIntegerField(unique=True)
+    username = models.CharField(max_length=100, blank=True)
+    first_name = models.CharField(max_length=100, blank=True)
+    last_name = models.CharField(max_length=100, blank=True)
+
+    kind = models.CharField(max_length=20, choices=Kind.choices, default=Kind.MEMBER)
+
+    # Konversatsiya holati mashinasi
+    state = models.CharField(max_length=40, blank=True)
+    data = models.JSONField(default=dict, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"@{self.username or self.telegram_id} ({self.get_kind_display()})"
+
+
 class TrackingEvent(models.Model):
     """
     Kuzatuv hodisasi: mehmon qayerda, qaysi kamerada ko'rindi,

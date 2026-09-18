@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from .models import Booth, Camera, ExpoVisitor, TrackingEvent, VisitAlert
+from .models import Booth, Camera, ExpoVisitor, TelegramProfile, TrackingEvent, VisitAlert
+
+
+@admin.register(TelegramProfile)
+class TelegramProfileAdmin(admin.ModelAdmin):
+    list_display = ("telegram_id", "username", "kind", "user", "state", "created_at")
+    list_filter = ("kind", "state")
+    search_fields = ("username", "first_name", "last_name", "telegram_id")
 
 
 @admin.register(Booth)
@@ -18,8 +25,8 @@ class CameraAdmin(admin.ModelAdmin):
 
 @admin.register(ExpoVisitor)
 class ExpoVisitorAdmin(admin.ModelAdmin):
-    list_display = ("full_name", "company", "purpose", "status", "check_in_at")
-    list_filter = ("status", "purpose")
+    list_display = ("full_name", "company", "visit_type", "purpose", "source", "status", "check_in_at")
+    list_filter = ("status", "purpose", "visit_type", "source")
     search_fields = ("first_name", "last_name", "company")
 
 

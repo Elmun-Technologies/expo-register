@@ -56,20 +56,31 @@ Stend egasi: "mening stendimga qancha mehmon keldi, qancha vaqt turishdi" statis
 | `sms.py` | **Eskiz.uz** SMS xabarnoma adapteri (O'zbekiston SMS provayderi) |
 | `telegram.py` | Telegram xabarnoma (admin guruhga yangi mehmon haqida xabar) |
 | `gate.py` | **Darvoza xizmati**: QR/jobida ro'yxatdan mehmon yaratish + kuzatuv boshlash + offline sinxronlash |
+| `telegram_bot.py` | **Telegram bot**: mijoz ro'yxatdan o'tadi → QR oladi (long polling) |
+| `management/commands/telegram_bot.py` | Botni ishga tushirish: `python manage.py telegram_bot` |
 | `static/expo/js/html5-qrcode.min.js` | QR skaner kutubxonasi (lokal — internet kerak emas) |
 | `static/expo/js/gate-sw.js` | Service Worker — manager telefoni offline ishlashini ta'minlaydi |
 | `data/haarcascade_frontalface_default.xml` | OpenCV yuzni aniqlash modeli fayli |
 
 ### 🚪 Darvoza (Gate) — offline rejim qanday ishlaydi
 
-**Oqim (bot → QR → darvoza):**
-1. Mijoz botda ro'yxatdan o'tadi — `chatbot` unga **avtomatik QR kartani** beradi
+**Oqim (Telegram bot → QR → darvoza):**
+1. Mijoz **Telegram bot**da (`/start`) ro'yxatdan o'tadi — ism, familiya,
+   kompaniya, maqsad kiritadi.
+2. Bot ro'yxatdan o'tkazib **avtomatik QR kartochka (rasm)** yuboradi
    (QR ichida Eventify Ticket ID — UUID).
-2. Kirish joyida manager telefonida `/expo/gate/` sahifasini ochadi.
-3. QR skaner (kamera) mijoz QR sini o'qiydi → tizim uni registratsiyadan
+3. Kirish joyida manager telefonida `/expo/gate/` sahifasini ochadi.
+4. QR skaner (kamera) mijoz QR sini o'qiydi → tizim uni registratsiyadan
    topib **ExpoVisitor yaratadi va darhol kuzatuvni boshlaydi**.
-4. QR bo'lmasa — manager **joyida** ism/familiya/kompaniya kiritadi
+5. QR bo'lmasa — manager **joyida** ism/familiya/kompaniya kiritadi
    (walk-in) — xuddi shunday kuzatuv boshlanadi.
+
+**Telegram bot (qo'shimcha kanal):**
+- `python manage.py telegram_bot` — botni ishga tushiradi (long polling).
+- BotFather'dan `TELEGRAM_BOT_TOKEN` olinib `.env` ga yoziladi.
+- `/start` — mijoz ro'yxati; `/manager` — manager rejimi.
+- Bot ham mijozni Eventify'ga (`User` + `Registration`) bog'laydi va
+  QR tayyorlaydi — darvoza skaneri bilan bir xil format.
 
 **Offline (internet uzilganda):**
 - Skanerlangan yoki kiritilgan yozuv **telefon xotirasida (localStorage)** saqlanadi.
@@ -151,7 +162,7 @@ Demo ma'lumotlarni qayta yaratish: `python manage.py seed_expo_demo`
 3. **Stend analitikasi** — qaysi stend qanchalik qiziq? (noyob mehmonlar, tashriflar, o'rtacha vaqt).
 4. **Reyting** — eng qiziq stendlar ro'yxati (admin uchun).
 5. **Yuzni aniqlash + dublikat nazorati** — kiosk kamerasi suratidan yuz olinadi va bir odam ikkinchi marta ro'yxatdan o'tmaydi (ism yoki yuz bo'yicha aniqlanadi).
-6. **Bot → QR → darvoza oqimi** — mijoz botda ro'yxatdan o'tadi, QR oladi, manager skanerlab ichkariga kiritadi, kuzatuv darhol boshlanadi.
+6. **Telegram bot → QR → darvoza oqimi** — mijoz Telegram'da ro'yxatdan o'tadi, QR oladi, manager skanerlab ichkariga kiritadi, kuzatuv darhol boshlanadi.
 7. **Offline darvoza** — internet uzilganda ham manager telefoni ishlaydi: yozuv navbatga saqlanadi, ulanish qaytganda avtomatik sinxronlanadi (takror yozilmaydi).
 8. **QR-kartochka (Badge)** — har bir mehmonga unikal QR-kodli kartochka, chop etish imkoniyati bilan.
 9. **CSV eksport** — mehmonlar ro'yxati (umumiy) va har bir stend uchun alohida (o'zbekcha BOM bilan).
@@ -172,7 +183,7 @@ Demo ma'lumotlarni qayta yaratish: `python manage.py seed_expo_demo`
 ## 7. Texnik holat
 
 - ✅ `python manage.py check` — 0 xato
-- ✅ `python manage.py test expo` — 21/21 test o'tdi
+- ✅ `python manage.py test expo` — 26/26 test o'tdi
 - ✅ `migrate` — barcha migratsiyalar qo'llangan (`face_hash`, `visit_type`, `source`, `offline_id`, `registration`)
 - ✅ Server ishga tushirilgan (LIVE PREVIEW, port 8000)
 - ✅ GitHub: barcha ishlar push qilindi

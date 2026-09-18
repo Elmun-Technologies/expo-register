@@ -428,3 +428,78 @@ class GateScanTests(TestCase):
             content_type="application/json",
         )
         self.assertEqual(resp2.json()["status"], "already")
+
+
+class TelegramBotTests(TestCase):
+    """Telegram bot — ro'yxat oqimi va QR generatsiyasi."""
+
+    def setUp(self):
+        Camera.objects.create(name="Kamera 1", zone="Kirish (Entrance)")
+
+    def test_default_event_and_organizer(self):
+        from expo import telegram_bot as tb
+
+        event = tb._default_event_sync()
+        self.assertIsNotNone(event)
+        self.assertEqual(event.status, "PUBLISHED")
+        self.assertIsNotNone(event.organizer)
+
+    def test_get_or_create_profile(self):
+        from expo import telegram_bot as tb
+        from expo.models import TelegramProfile
+
+        profile = tb._get_or_create_profile_sync(123456789, "mehmon", "Aziz", "Karimov")
+        self.assertEqual(profile.telegram_id, 123456789)
+        self.assertEqual(TelegramProfile.objects.filter(telegram_id=123456789).count(), 1)
+
+        # Qayta chaqirilsa yangi yaratilmaydi
+        tb._get_or_create_profile_sync(123456789, "mehmon", "Aziz", "Karimov")
+        self.assertEqual(TelegramProfile.objects.filter(telegram_id=123456789).count(), 1)
+
+    def test_finish_registration_sync(self):
+        from expo import telegram_bot as tb
+        from django.contrib.auth import get_user_model
+        from expo.models import TelegramProfile
+
+        User = get_user_model()
+        result = tb._finish_registration_sync(
+            777001,
+            "botuser",
+            "Tele",
+            "Gram",
+            {"first_name": "Karim", "last_name": "Navruzov",
+             "company": "GreenTech", "purpose": "BUSINESS"},
+            phone="998901234567",
+        )
+        profile, registration, event, fname, lname, company, purpose = result
+        self.assertEqual(fname, "Karim")
+        self.assertEqual(lname, "Navruzov")
+        self.assertEqual(company, "GreenTech")
+        self.assertIsNotNone(registration.ticket_qr)
+        self.assertEqual(registration.attendee.username, "tg777001")
+        self.assertEqual(
+            TelegramProfile.objects.get(telegram_id=777001).state, "DONE"
+        )
+
+    def test_build_qr_png_contains_ascii(self):
+        from expo import telegram_bot as tb
+        from events.models import Event
+        from django.contrib.auth import get_user_model
+        from registrations.models import Registration
+
+        User = get_user_model()
+        event = tb._default_event_sync()
+        user = User.objects.create_user(
+            username="tg_test_qr", first_name="Q", last_name="T", role="ATTENDEE"
+        )
+        reg = Registration.objects.create(attendee=user, event=event)
+        buf = tb.build_qr_png(reg)
+        data = buf.getvalue()
+        self.assertTrue(data.startswith(b"\x89PNG"))
+        self.assertGreater(len(data), 500)
+
+    def test_build_application_requires_token(self):
+        from expo import telegram_bot as tb
+
+        with self.assertRaises(RuntimeError):
+            tb.build_application(token="")
