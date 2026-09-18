@@ -43,10 +43,15 @@ CSRF_TRUSTED_ORIGINS = [
 
 if DEBUG:
     # Arena sandbox live-preview proxy (https://{port}-{id}.e2b.app).
+    # Host `8000-abc123.e2b.app` — ikki darajali subdomain, shuning uchun
+    # bir darajali `*.e2b.app` bilan baravar ikki darajali `*.*.e2b.app`
+    # ham qo'shamiz.
     ALLOWED_HOSTS += ["*"]
     CSRF_TRUSTED_ORIGINS += [
         "https://*.e2b.app",
+        "https://*.*.e2b.app",
         "http://*.e2b.app",
+        "http://*.*.e2b.app",
     ]
 
 
@@ -279,12 +284,23 @@ SECURE_SSL_REDIRECT = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 
+# DEBUG (live-preview) rejimida iframe/proksi'da ishlashi uchun
+# aniq value'lar (ustida belgilangan not DEBUG qiymatini e'lon
+# qilingan joyidan keyin qayta tiklaymiz).
+if DEBUG:
+    CSRF_COOKIE_SAMESITE = "None"
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = "None"
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_HTTPONLY = False
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 SECURE_HSTS_SECONDS = 60 * 60 * 24 * 30 if not DEBUG else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
 SECURE_HSTS_PRELOAD = not DEBUG
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
-X_FRAME_OPTIONS = "DENY"
+X_FRAME_OPTIONS = "SAMEORIGIN" if DEBUG else "DENY"
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
