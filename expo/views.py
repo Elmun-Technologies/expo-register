@@ -15,7 +15,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from events.views import get_dashboard_type
 
-from . import analytics, face, services, simulation
+from . import analytics, face, gate, services, simulation
 from .forms import KioskCheckinForm
 from .models import Booth, Camera, ExpoVisitor, TrackingEvent, VisitAlert
 
@@ -582,3 +582,105 @@ def visitors_report_pdf(request):
     response["Content-Disposition"] = 'attachment; filename="expo_visitors.pdf"'
     return response
 
+
+
+# ==========================================================
+# DARVOZA (GATE) — manager telefoni uchun offline-friendly skaner
+# ==========================================================
+
+def gate_scan(request):
+    """Manager skaner sahifasi (QR + joyida ro'yxat + offline navbat)."""
+    if not can_monitor(request.user):
+        messages.error(request, "Ushbu sahifaga kirish huquqi yo'q.")
+        return redirect("dashboard_home")
+    return render(request, "expo/gate.html", {})
+
+
+def gate_scan_api(request):
+    """
+    Skanerlangan QR yoki walk-in ma'lumot asosida mehmonni kiritish.
+
+    POST JSON:
+        qr_text / first_name / last_name / company / phone / purpose /
+        visit_type / offline_id / photo_data
+
+    Javob:
+        {"success": bool, "status": "ok"|"already"|"error",
+         "visitor_id": ..., "full_name": ..., "message": ...}
+    """
+    if not can_monitor(request.user):
+        return JsonResponse({"success": False, "status": "error",
+                             "message": "Kirish huquqi yo'q"}, status=403)
+
+    if request.method != "POST":
+        return JsonResponse({"success": False, "status": "error",
+                             "message": "Faqat POST so'rov qabul qilinadi"}, status=405)
+
+    try:
+        payload = json.loads(request.body or b"{}")
+    except json.JSONDecodeError:
+        payload = request.POST.dict()
+
+    if isinstance(payload, list):
+        # Bir nechta yozuv — batch sinxronlash
+        results = gate.sync_offline_batch(payload)
+        return JsonResponse({"success": True, "results": results})
+
+    payload["created_by"] = request.user
+
+    try:
+        visitor, created, status, message = gate.create_visitor_from_scan(payload)
+    except Exception as exc:  # noqa: BLE001
+        return JsonResponse({"success": False, "status": "error",
+                             "message": f"Xato: {exc}"}, status=500)
+
+    if status == "error":
+        return JsonResponse({"success": False, "status": "error",
+                             "message": message}, status=400)
+
+    return JsonResponse({
+        "success": status != "error",
+        "status": status,
+        "created": created,
+        "visitor_id": getattr(visitor, "pk", None),
+        "full_name": getattr(visitor, "full_name", ""),
+        "badge_token": getattr(visitor, "badge_token", None) and str(visitor.badge_token),
+        "message": message,
+    })
+
+
+def gate_auto_qr(request, registration_id):
+    """
+    Bot ro'yxatdan o'tgan mijoz uchun darvoza QR kartasi (data URL PNG).
+
+    QR ichiga Ticket ID (UUID) qo'yiladi — manager skaneri shu orqali
+    mijozni topib, ichkariga kiritadi va kuzatuvni boshlaydi.
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({"success": False, "message": "Login talab qilinadi"}, status=401)
+
+    from registrations.models import Registration
+
+    registration = get_object_or_404(
+        Registration.objects.select_related("event"),
+        pk=registration_id,
+    )
+    if registration.attendee_id != request.user.id:
+        return JsonResponse({"success": False, "message": "Kirish huquqi yo'q"}, status=403)
+
+    import io as _io
+
+    payload = (
+        f"Ticket ID:\n{registration.ticket_code}\n\n"
+        f"Attendee:\n{registration.attendee.username}\n\n"
+        f"Event:\n{registration.event.title}\n"
+    )
+    qr = qrcode.make(payload, box_size=8, border=2)
+    buf = _io.BytesIO()
+    qr.save(buf, format="PNG")
+    b64 = base64.b64encode(buf.getvalue()).decode("ascii")
+    return JsonResponse({
+        "success": True,
+        "data_uri": f"data:image/png;base64,{b64}",
+        "ticket_code": str(registration.ticket_code),
+    })

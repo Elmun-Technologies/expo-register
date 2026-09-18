@@ -496,7 +496,8 @@ function renderInlineFormatting(
     function addMessage(
         text,
         sender,
-        links = []
+        links = [],
+        image = null
     ) {
 
         const wrapper =
@@ -536,6 +537,37 @@ renderChatbotText(
         content.appendChild(
             textElement
         );
+
+
+        /* ==================================================
+           INLINE IMAGE (e.g. QR ticket)
+        ================================================== */
+
+        if (image) {
+
+            const img =
+                document.createElement(
+                    "img"
+                );
+
+            img.src = image;
+
+            img.alt = "QR";
+
+            img.className =
+                "chatbot-image";
+
+            img.style.cssText =
+                "display:block;width:180px;height:180px;" +
+                "margin:8px 0;border-radius:12px;" +
+                "background:#fff;padding:6px;" +
+                "border:1px solid #e2e8f0;";
+
+            content.appendChild(
+                img
+            );
+
+        }
 
 
         /* ==================================================
@@ -983,7 +1015,9 @@ if (response.status === 429) {
     addMessage(
         data.reply ||
         "The AI assistant is temporarily unavailable because the AI service has reached its usage limit. Please try again later. ⏳",
-        "bot"
+        "bot",
+        [],
+        data.image || null
     );
 
 }
@@ -992,7 +1026,8 @@ else if (data.reply) {
     addMessage(
         data.reply,
         "bot",
-        data.links || []
+        data.links || [],
+        data.image || null
     );
 
 }

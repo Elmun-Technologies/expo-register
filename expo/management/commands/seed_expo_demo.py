@@ -44,6 +44,7 @@ class Command(BaseCommand):
         self._booths()
         self._admin()
         self._security()
+        self._demo_attendee()
         self.stdout.write(self.style.SUCCESS("Expo demo ma'lumotlari tayyor!"))
 
     def _cameras(self):
@@ -108,3 +109,59 @@ class Command(BaseCommand):
             self.stdout.write(f"  Xavfsizlik xodimi: {username} / security123")
         else:
             self.stdout.write(f"  Xavfsizlik xodimi allaqachon mavjud: {username}")
+
+    def _demo_attendee(self):
+        """
+        Bot orqali ro'yxatdan o'tgan demo mehmon — QR tiket bilan.
+        Manager darvoza skaneri shu QR ni o'qib uni ichkariga kiritadi.
+        """
+        from events.models import Event, EventCategory
+        from registrations.models import Registration
+        from registrations.utils import generate_ticket_qr
+
+        username = "mehmon_demo"
+        user, created = User.objects.get_or_create(
+            username=username,
+            defaults={
+                "first_name": "Akmal",
+                "last_name": "Rahimov",
+                "role": User.Role.ATTENDEE,
+            },
+        )
+        if created:
+            user.set_password("mehmon12345")
+            user.save()
+
+        category, _ = EventCategory.objects.get_or_create(
+            name="Texnologiya",
+            defaults={"slug": "texnologiya"},
+        )
+        event, _ = Event.objects.get_or_create(
+            title="O'zbekiston Expo — Texnologiyalar 2026",
+            defaults={
+                "slug": "ozbekiston-expo-texnologiyalar-2026",
+                "description": "O'zbekiston texnologiyalar ko'rgazmasi",
+                "venue": "Toshkent, Uzexpocentre",
+                "category": category,
+                "status": Event.Status.PUBLISHED,
+                "event_date": "2026-10-15",
+                "start_time": "10:00:00",
+                "end_time": "18:00:00",
+                "registration_deadline": "2026-10-14 23:59:59",
+                "max_capacity": 1000,
+                "available_seats": 990,
+                "price": 0,
+            },
+        )
+
+        registration, reg_created = Registration.objects.get_or_create(
+            attendee=user,
+            event=event,
+        )
+        if reg_created or not registration.ticket_qr:
+            generate_ticket_qr(registration)
+
+        if reg_created:
+            self.stdout.write(f"  Demo mehmon (QR tiket): {username} / mehmon12345")
+        else:
+            self.stdout.write(f"  Demo mehmon allaqachon mavjud: {username}")

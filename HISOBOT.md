@@ -55,7 +55,30 @@ Stend egasi: "mening stendimga qancha mehmon keldi, qancha vaqt turishdi" statis
 | `pdf.py` | PDF hisobotlar: stend analitikasi + mehmonlar ro'yxati (Cyrillic qo'llab-quvvatlash bilan) |
 | `sms.py` | **Eskiz.uz** SMS xabarnoma adapteri (O'zbekiston SMS provayderi) |
 | `telegram.py` | Telegram xabarnoma (admin guruhga yangi mehmon haqida xabar) |
+| `gate.py` | **Darvoza xizmati**: QR/jobida ro'yxatdan mehmon yaratish + kuzatuv boshlash + offline sinxronlash |
+| `static/expo/js/html5-qrcode.min.js` | QR skaner kutubxonasi (lokal — internet kerak emas) |
+| `static/expo/js/gate-sw.js` | Service Worker — manager telefoni offline ishlashini ta'minlaydi |
 | `data/haarcascade_frontalface_default.xml` | OpenCV yuzni aniqlash modeli fayli |
+
+### 🚪 Darvoza (Gate) — offline rejim qanday ishlaydi
+
+**Oqim (bot → QR → darvoza):**
+1. Mijoz botda ro'yxatdan o'tadi — `chatbot` unga **avtomatik QR kartani** beradi
+   (QR ichida Eventify Ticket ID — UUID).
+2. Kirish joyida manager telefonida `/expo/gate/` sahifasini ochadi.
+3. QR skaner (kamera) mijoz QR sini o'qiydi → tizim uni registratsiyadan
+   topib **ExpoVisitor yaratadi va darhol kuzatuvni boshlaydi**.
+4. QR bo'lmasa — manager **joyida** ism/familiya/kompaniya kiritadi
+   (walk-in) — xuddi shunday kuzatuv boshlanadi.
+
+**Offline (internet uzilganda):**
+- Skanerlangan yoki kiritilgan yozuv **telefon xotirasida (localStorage)** saqlanadi.
+- Ekran "Offline — navbatda saqlanadi" deb ko'rsatadi.
+- Internet qaytganda **bir tugma bilan (Sinxronlash)** yoki avtomatik yuboriladi.
+- Har bir offline yozuvga unikal `offline_id` beriladi — shu tufayli
+  xuddi shu yozuv **ikki marta takror kiritilmaydi** (idempotentlik).
+- Sahifa Service Worker orqali keshlanadi — telefon butunlay offline
+  bo'lsa ham gate sahifasi ochiladi.
 
 ### 🔐 Yangi rollar va huquqlar
 
@@ -86,6 +109,9 @@ Stend egasi: "mening stendimga qancha mehmon keldi, qancha vaqt turishdi" statis
 | Bosh sahifa | `/` | Hammaga |
 | Kiosk (O'z) | `/expo/kiosk/` | Hammaga (terminalsiz) |
 | Kiosk (Rus) | `/expo/kiosk/?lang=ru` | Hammaga |
+| **Darvoza (QR skaner)** | `/expo/gate/` | Admin, Security (offline-friendly) |
+| Darvoza API | `/expo/gate/api/` | Admin, Security |
+| Darvoza auto-QR | `/expo/gate/auto-qr/<id>/` | Ro'yxatdan o'tgan mijoz |
 | Monitoring paneli | `/expo/monitor/` | Admin, Security |
 | Mehmonlar ro'yxati | `/expo/visitors/` | Admin, Security |
 | Mehmon detal (kuzatuv yo'li) | `/expo/visitors/<id>/` | Admin, Security, Stend egasi |
@@ -111,6 +137,7 @@ Stend egasi: "mening stendimga qancha mehmon keldi, qancha vaqt turishdi" statis
 | `aloqa` | `aloqa12345` | Stend egasi (AloqaBank Digital) |
 | `uzauto` | `uzauto12345` | Stend egasi (UzAuto Tech) |
 | `bepro` | `bepro12345` | Stend egasi (BePro Startup) |
+| `mehmon_demo` | `mehmon12345` | Mehmon (QR tiketli) |
 
 Demo ma'lumotlarni qayta yaratish: `python manage.py seed_expo_demo`
 
@@ -124,12 +151,14 @@ Demo ma'lumotlarni qayta yaratish: `python manage.py seed_expo_demo`
 3. **Stend analitikasi** — qaysi stend qanchalik qiziq? (noyob mehmonlar, tashriflar, o'rtacha vaqt).
 4. **Reyting** — eng qiziq stendlar ro'yxati (admin uchun).
 5. **Yuzni aniqlash + dublikat nazorati** — kiosk kamerasi suratidan yuz olinadi va bir odam ikkinchi marta ro'yxatdan o'tmaydi (ism yoki yuz bo'yicha aniqlanadi).
-6. **QR-kartochka (Badge)** — har bir mehmonga unikal QR-kodli kartochka, chop etish imkoniyati bilan.
-7. **CSV eksport** — mehmonlar ro'yxati (umumiy) va har bir stend uchun alohida (o'zbekcha BOM bilan).
-8. **PDF hisobotlar** — stend analitikasi va mehmonlar ro'yxati (o'zbekcha/ruscha shrift bilan).
-9. **Telegram + SMS xabarnoma** — yangi mehmon ro'yxatdan o'tganda admin guruhga Telegram xabar va telefonga Eskiz.uz SMS.
-10. **Admin dashboard integratsiyasi** — Expo ko'rsatkichlari (faol mehmonlar, stendlar, kameralar) asosiy dashboard'da.
-11. **To'liq Eventify funksionalligi** — tadbirlar, QR-ticket, check-in, notification'lar, chatbot.
+6. **Bot → QR → darvoza oqimi** — mijoz botda ro'yxatdan o'tadi, QR oladi, manager skanerlab ichkariga kiritadi, kuzatuv darhol boshlanadi.
+7. **Offline darvoza** — internet uzilganda ham manager telefoni ishlaydi: yozuv navbatga saqlanadi, ulanish qaytganda avtomatik sinxronlanadi (takror yozilmaydi).
+8. **QR-kartochka (Badge)** — har bir mehmonga unikal QR-kodli kartochka, chop etish imkoniyati bilan.
+9. **CSV eksport** — mehmonlar ro'yxati (umumiy) va har bir stend uchun alohida (o'zbekcha BOM bilan).
+10. **PDF hisobotlar** — stend analitikasi va mehmonlar ro'yxati (o'zbekcha/ruscha shrift bilan).
+11. **Telegram + SMS xabarnoma** — yangi mehmon ro'yxatdan o'tganda admin guruhga Telegram xabar va telefonga Eskiz.uz SMS.
+12. **Admin dashboard integratsiyasi** — Expo ko'rsatkichlari (faol mehmonlar, stendlar, kameralar) asosiy dashboard'da.
+13. **To'liq Eventify funksionalligi** — tadbirlar, QR-ticket, check-in, notification'lar, chatbot.
 
 ### Kelajakda (qatlam tayyor, ulash kerak)
 1. **Haqiqiy Hikvision kameralar** — `Camera.mode = LIVE` qilib IP/login/parol kiritiladi (adapter `hikvision.py` tayyor).
@@ -143,11 +172,13 @@ Demo ma'lumotlarni qayta yaratish: `python manage.py seed_expo_demo`
 ## 7. Texnik holat
 
 - ✅ `python manage.py check` — 0 xato
-- ✅ `python manage.py test expo` — 16/16 test o'tdi
-- ✅ `migrate` — barcha migratsiyalar qo'llangan (shu jumladan `face_hash` maydoni)
+- ✅ `python manage.py test expo` — 21/21 test o'tdi
+- ✅ `migrate` — barcha migratsiyalar qo'llangan (`face_hash`, `visit_type`, `source`, `offline_id`, `registration`)
 - ✅ Server ishga tushirilgan (LIVE PREVIEW, port 8000)
-- ✅ GitHub: barcha ishlar push qilindi (`f42f2c8`, `c63da94`)
+- ✅ GitHub: barcha ishlar push qilindi
 - ✅ OpenCV 4.10 yuzni aniqlash + haarcascade modeli bog'langan
+- ✅ QR skaner (html5-qrcode) lokal — offline ishlaydi
+- ✅ Service Worker — gate sahifasi offline keshlanadi
 
 ---
 

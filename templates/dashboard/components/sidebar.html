@@ -298,6 +298,20 @@
 
 
 
+<a href="{% url 'expo_gate' %}"
+   target="_blank"
+   class="{% if request.resolver_match.url_name == 'expo_gate' %}active{% endif %}">
+
+    <i class="bi bi-qr-code-scan"></i>
+
+    <span>
+        Darvoza (QR skaner)
+    </span>
+
+</a>
+
+
+
 {% endif %}
 
 

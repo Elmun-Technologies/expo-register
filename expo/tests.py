@@ -274,3 +274,157 @@ class SearchAndPdfTests(TestCase):
         resp = self.client.get("/expo/visitors/pdf/")
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(resp.content.startswith(b"%PDF"))
+
+
+class GateScanTests(TestCase):
+    """Darvoza (gate) — QR skaner va offline navbat oqimi."""
+
+    def setUp(self):
+        self.security = User.objects.create_user(
+            username="sec1",
+            password="pass12345",
+            role=User.Role.SECURITY,
+        )
+        Camera.objects.create(name="Kamera 1", zone="Kirish (Entrance)")
+        Booth.objects.create(booth_number="A01", name="Test Stend", zone="Asosiy zal (Hall A)")
+
+    def test_gate_page_requires_monitor_role(self):
+        resp = self.client.get("/expo/gate/")
+        self.assertEqual(resp.status_code, 302)  # login talab
+        self.client.force_login(self.security)
+        resp = self.client.get("/expo/gate/")
+        self.assertEqual(resp.status_code, 200)
+
+    def test_gate_walkin_creates_visitor_and_tracking(self):
+        self.client.force_login(self.security)
+        resp = self.client.post(
+            "/expo/gate/api/",
+            data={
+                "first_name": "Dilnoza",
+                "last_name": "Karimova",
+                "company": "Payme",
+                "purpose": "INVESTOR",
+                "visit_type": "EXHIBITOR",
+            },
+            content_type="application/json",
+        )
+        data = resp.json()
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(data["success"])
+        self.assertEqual(data["status"], "ok")
+
+        visitor = ExpoVisitor.objects.get(pk=data["visitor_id"])
+        self.assertEqual(visitor.full_name, "Dilnoza Karimova")
+        self.assertEqual(visitor.visit_type, ExpoVisitor.VisitType.EXHIBITOR)
+        self.assertEqual(visitor.source, ExpoVisitor.Source.GATE_WALKIN)
+        self.assertTrue(visitor.tracking_events.exists())
+        self.assertTrue(visitor.alerts.exists())
+
+    def test_gate_walkin_requires_names(self):
+        self.client.force_login(self.security)
+        resp = self.client.post(
+            "/expo/gate/api/",
+            data={"first_name": "", "last_name": ""},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertFalse(resp.json()["success"])
+
+    def test_gate_offline_batch_idempotent(self):
+        self.client.force_login(self.security)
+        import uuid
+        oid = str(uuid.uuid4())
+        batch = [
+            {"offline_id": oid, "first_name": "Behruz", "last_name": "Olimov"},
+        ]
+        resp = self.client.post(
+            "/expo/gate/api/",
+            data=batch,
+            content_type="application/json",
+        )
+        data = resp.json()
+        self.assertTrue(data["success"])
+        self.assertEqual(data["results"][0]["status"], "ok")
+        self.assertEqual(data["results"][0]["created"], True)
+
+        # Xuddi shu offline_id qayta yuborilsa — yangi yozuv yaratilmaydi
+        resp2 = self.client.post(
+            "/expo/gate/api/",
+            data=batch,
+            content_type="application/json",
+        )
+        data2 = resp2.json()
+        self.assertEqual(data2["results"][0]["created"], False)
+        self.assertEqual(
+            ExpoVisitor.objects.filter(offline_id=oid).count(), 1
+        )
+
+    def test_gate_qr_creates_visitor_from_registration(self):
+        from events.models import Event
+        from registrations.models import Registration
+        from registrations.utils import generate_ticket_qr
+        import json
+
+        attendee = User.objects.create_user(
+            username="mehmon_test",
+            password="x",
+            first_name="Akmal",
+            last_name="Rahimov",
+            role=User.Role.ATTENDEE,
+        )
+        from django.utils import timezone
+        from events.models import EventCategory
+
+        category = EventCategory.objects.get_or_create(
+            name="Expo", defaults=dict(slug="expo")
+        )[0]
+
+        organizer = User.objects.create_user(
+            username="org_test",
+            password="x",
+            role=User.Role.ORGANIZER,
+        )
+
+        event = Event.objects.get_or_create(
+            title="Test Expo",
+            defaults=dict(
+                slug="test-expo",
+                status="PUBLISHED",
+                venue="Toshkent",
+                description="test",
+                category=category,
+                organizer=organizer,
+                event_date="2026-10-01",
+                start_time="10:00:00",
+                end_time="18:00:00",
+                registration_deadline=timezone.now() + timezone.timedelta(days=5),
+                max_capacity=100,
+                available_seats=100,
+                price=0,
+            ),
+        )[0]
+        registration = Registration.objects.create(attendee=attendee, event=event)
+        generate_ticket_qr(registration)
+
+        self.client.force_login(self.security)
+        qr_text = f"Ticket ID:\n{registration.ticket_code}\n"
+        resp = self.client.post(
+            "/expo/gate/api/",
+            data=json.dumps({"qr_text": qr_text}),
+            content_type="application/json",
+        )
+        data = resp.json()
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(data["success"])
+        visitor = ExpoVisitor.objects.get(pk=data["visitor_id"])
+        self.assertEqual(visitor.full_name, "Akmal Rahimov")
+        self.assertEqual(visitor.source, ExpoVisitor.Source.GATE_QR)
+        self.assertEqual(visitor.registration_id, registration.id)
+
+        # Qayta skanerlash — already
+        resp2 = self.client.post(
+            "/expo/gate/api/",
+            data=json.dumps({"qr_text": qr_text}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp2.json()["status"], "already")

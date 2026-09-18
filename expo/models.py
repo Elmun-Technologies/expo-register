@@ -104,9 +104,34 @@ class ExpoVisitor(models.Model):
         ACTIVE = "ACTIVE", "Active (inside)"
         LEFT = "LEFT", "Left"
 
+    class VisitType(models.TextChoices):
+        VISITOR = "VISITOR", "Mehmon (Guest)"
+        EXHIBITOR = "EXHIBITOR", "Eksponent (Exhibitor)"
+
+    class Source(models.TextChoices):
+        KIOSK = "KIOSK", "Kiosk terminal"
+        GATE_QR = "GATE_QR", "Darvoza — QR ticket"
+        GATE_WALKIN = "GATE_WALKIN", "Darvoza — joyida ro'yxat"
+        OFFLINE = "OFFLINE", "Offline navbat (sinxronlandi)"
+
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     company = models.CharField(max_length=150, blank=True)
+    visit_type = models.CharField(max_length=20, choices=VisitType.choices, default=VisitType.VISITOR)
+    source = models.CharField(max_length=20, choices=Source.choices, default=Source.KIOSK)
+
+    # Mijoz qurilmasida yaratilgan unikal ID — offline navbat takror
+    # sinxronlanmasligi uchun (idempotentlik).
+    offline_id = models.UUIDField(null=True, blank=True, unique=True, editable=False)
+
+    # Bot orqali ro'yxatdan o'tgan bo'lsa, shu ro'yxatga bog'lanadi.
+    registration = models.OneToOneField(
+        "registrations.Registration",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="expo_visitor",
+    )
     purpose = models.CharField(max_length=30, choices=Purpose.choices, default=Purpose.BUSINESS)
     phone = models.CharField(max_length=20, blank=True)
     email = models.EmailField(blank=True)

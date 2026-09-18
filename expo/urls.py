@@ -1,6 +1,20 @@
+from django.http import HttpResponse
 from django.urls import path
 
 from . import views
+
+
+def gate_service_worker(request):
+    """Offline gate uchun Service Worker JS (to'g'ri MIME bilan)."""
+    body = ""
+    from pathlib import Path
+    sw = Path(__file__).parent / "static" / "expo" / "js" / "gate-sw.js"
+    if sw.exists():
+        body = sw.read_text(encoding="utf-8")
+    return HttpResponse(
+        body,
+        content_type="application/javascript; charset=utf-8",
+    )
 
 urlpatterns = [
     # Kiosk — mehmon kirishi (ochiq)
@@ -30,4 +44,10 @@ urlpatterns = [
     # API (simulyatsiya / kuzatuv)
     path("api/advance/<int:visitor_id>/", views.api_advance, name="expo_api_advance"),
     path("api/path/<int:visitor_id>/", views.api_visitor_path, name="expo_api_path"),
+
+    # Darvoza (gate) — manager telefoni: QR skaner + offline navbat
+    path("gate/", views.gate_scan, name="expo_gate"),
+    path("gate/api/", views.gate_scan_api, name="expo_gate_api"),
+    path("gate/auto-qr/<int:registration_id>/", views.gate_auto_qr, name="expo_gate_auto_qr"),
+    path("gate/sw.js", gate_service_worker, name="expo_gate_sw"),
 ]
