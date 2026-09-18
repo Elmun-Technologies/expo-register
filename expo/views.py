@@ -527,10 +527,22 @@ def visitors_export_csv(request):
 
     writer = csv.writer(response)
     writer.writerow([
-        "ID", "Ism", "Familiya", "Kompaniya", "Maqsad",
-        "Telefon", "Email", "Holat", "Kirish vaqti", "Chiqish vaqti",
+        "ID", "Ism", "Familiya", "Kompaniya", "Turi", "Maqsad",
+        "Kirish usuli", "Telefon", "Email", "Holat",
+        "Kirish vaqti", "Chiqish vaqti",
         "Ichkaridagi daqiqalar", "Oxirgi zona",
     ])
+
+    source_label = {
+        "KIOSK": "Kiosk",
+        "GATE_QR": "Darvoza — QR",
+        "GATE_WALKIN": "Darvoza — joyida",
+        "OFFLINE": "Offline navbat",
+    }
+    type_label = {
+        "VISITOR": "Mehmon",
+        "EXHIBITOR": "Eksponent",
+    }
 
     for v in ExpoVisitor.objects.order_by("-check_in_at"):
         writer.writerow([
@@ -538,7 +550,9 @@ def visitors_export_csv(request):
             v.first_name,
             v.last_name,
             v.company,
+            type_label.get(v.visit_type, v.visit_type),
             v.get_purpose_display(),
+            source_label.get(v.source, v.source),
             v.phone,
             v.email,
             "Ichkarida" if v.is_active else "Chiqib ketdi",

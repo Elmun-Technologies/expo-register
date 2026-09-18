@@ -82,8 +82,22 @@
                                 </div>
                             </div>
                         </td>
-                        <td>{{ v.company|default:"—" }}</td>
-                        <td><span class="badge text-bg-light">{{ v.get_purpose_display }}</span></td>
+                        <td>
+                            {{ v.company|default:"—" }}
+                            {% if v.visit_type == "EXHIBITOR" %}
+                                <div><span class="badge text-bg-warning text-dark mt-1">Eksponent</span></div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge text-bg-light">{{ v.get_purpose_display }}</span>
+                            <div class="text-muted small mt-1">
+                                {% if v.source == "GATE_QR" %}<i class="bi bi-qr-code"></i> QR
+                                {% elif v.source == "GATE_WALKIN" %}<i class="bi bi-person-plus"></i> Darvoza
+                                {% elif v.source == "OFFLINE" %}<i class="bi bi-cloud-arrow-up"></i> Offline
+                                {% else %}<i class="bi bi-upc-scan"></i> Kiosk
+                                {% endif %}
+                            </div>
+                        </td>
                         <td>
                             {% if v.is_active %}
                                 <span class="badge text-bg-success">Ichkarida</span>
