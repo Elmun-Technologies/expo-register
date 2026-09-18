@@ -1,5 +1,6 @@
 {% extends "dashboard/base_dashboard.html" %}
 {% load static %}
+{% load humanize %}
 
 {% block title %}
 Events
@@ -1163,11 +1164,11 @@ Events
 
                     {% if event.price %}
 
-                        ₹{{ event.price }}
+                        {{ event.price|floatformat:"0"|intcomma }} so'm
 
                     {% else %}
 
-                        Free
+                        Bepul
 
                     {% endif %}
 

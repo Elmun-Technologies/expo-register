@@ -79,6 +79,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.humanize",
 ]
 
 
@@ -169,6 +170,24 @@ USE_I18N = True
 
 USE_TZ = True
 
+# O'zbekiston standartlari: hafta dushanbadan boshlanadi,
+# sana/kun formati mahalliy ko'rinishda.
+FIRST_DAY_OF_WEEK = 1
+
+DATE_FORMAT = "d.m.Y"
+
+DATETIME_FORMAT = "d.m.Y H:i"
+
+TIME_FORMAT = "H:i"
+
+SHORT_DATE_FORMAT = "d.m.Y"
+
+DECIMAL_SEPARATOR = "."
+
+THOUSAND_SEPARATOR = " "
+
+USE_THOUSAND_SEPARATOR = True
+
 
 # --------------------------------------------------
 # Static Files
@@ -222,7 +241,7 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-DEFAULT_FROM_EMAIL = "Event Management System <noreply@eventsystem.com>"
+DEFAULT_FROM_EMAIL = "Expo Control <noreply@expocontrol.uz>"
 
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 

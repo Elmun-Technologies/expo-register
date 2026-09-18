@@ -1,3 +1,4 @@
+{% load humanize %}
 
 
 <script>
@@ -458,7 +459,7 @@ PLATFORM HEALTH
 
                         <h2 class="fw-bold mt-2 mb-0">
 
-                            ₹{{ total_revenue|default:0 }}
+                            {{ total_revenue|floatformat:"0"|intcomma }} so'm
 
                         </h2>
 
@@ -466,7 +467,7 @@ PLATFORM HEALTH
 
                     <div class="icon-box icon-primary">
 
-                        <i class="bi bi-currency-rupee"></i>
+                        <i class="bi bi-cash-coin"></i>
 
                     </div>
 
@@ -669,7 +670,7 @@ ANALYTICS
 
                         <h6 class="fw-bold mb-1 text-primary">
 
-                            ₹{{ total_revenue|default:0 }}
+                            {{ total_revenue|floatformat:"0"|intcomma }} so'm
 
                         </h6>
 

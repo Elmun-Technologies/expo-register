@@ -109,7 +109,7 @@ Event:
 - Date: {event.event_date}
 - Start Time: {event.start_time}
 - End Time: {event.end_time}
-- Price: ₹{event.price}
+- Price: {event.price} so'm
 - Maximum Capacity: {event.max_capacity}
 - Available Seats: {event.available_seats}
 - Registration Deadline: {event.registration_deadline}
